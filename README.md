@@ -28,16 +28,3 @@ Every script should:
 
 - For help in powershell: `Get-Help .\filename.ps1`
 - Internationalization:  Test scripts with some non-latin characters in file strings / usernames when possible.  For example, python needs to call reload(sys) / sys.setdefaultencoding('UTF8') to be happy with nonlatin strings.
-
-### Future Plans
-
-Omissions / scripts to add:
-
-- Scripts to get/manage list of shared links?  Scripts to add password/permission to links
-- PHP example (anything)
-- .NET / C# example (anything)
-- Anything audit-log centric in another language (python/php)
-- Groups
-- Shared folder API & device management API in beta.  Have examples prepared (but don’t publish to GIT until public)
-  - Script that takes white/blacklist (of region, apps, devices) and disconnect accordingly
-  - Script that takes list of members, adds them to group if not present.
