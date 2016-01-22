@@ -1,5 +1,5 @@
 # DropboxBusinessScripts
-## Dropbox Business & Dropbox Enterprise Scripts
+#### Dropbox Business & Dropbox Enterprise Scripts
 
 Included here are scripting resources to serve as a base for common Dropbox Business and Dropbox Enterprise tasks. 
 
