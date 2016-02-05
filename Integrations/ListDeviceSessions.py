@@ -62,8 +62,12 @@ def get_dfb_member(tag, value):
 # Get a member's sessions that match the input date & type arguments
 def get_member_sessions(email):
     member_id = get_dfb_member('email', email)['profile']['team_member_id']
-    data = { 'include_web_sessions':args.web, 'include_desktop_clients':args.desktop,
-             'include_mobile_clients': args.mobile, 'team_member_id': member_id}
+    data = {
+        'include_web_sessions': args.web,
+        'include_desktop_clients': args.desktop,
+        'include_mobile_clients': args.mobile,
+        'team_member_id': member_id
+    }
     request = urllib2.Request('https://api.dropboxapi.com/2/team/devices/list_member_devices', json.dumps(data))
     request.add_header("Authorization", "Bearer "+token)
     request.add_header("Content-type", 'application/json')
