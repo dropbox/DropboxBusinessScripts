@@ -28,7 +28,7 @@ def getDfbMember(email):
     
     # Exit on error here.  Probably user not found or bad OAuth token.  Show DfB response.
     except urllib2.HTTPError, error:
-        parser.error(error.read());
+        parser.error(error.read())
 
 
 # Get all DfB members, paging through member list if necessary
