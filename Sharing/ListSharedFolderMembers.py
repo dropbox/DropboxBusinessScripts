@@ -25,6 +25,30 @@ reload(sys)
 sys.setdefaultencoding('UTF8')
 
 
+class TraceEntity(object):
+    """Trace information"""
+
+    def __init__(self, event):
+        import time
+        import traceback
+        self.event = event
+        self.time = time.time()
+        self.trace = traceback.format_stack()
+
+
+class TraceRecorder(object):
+    """Trace/debug recorder"""
+
+    def __init__(self):
+        self.traces = []
+
+    def log(self, event):
+        self.traces.append(TraceEntity(event))
+
+
+trace_recorder = TraceRecorder()
+
+
 class Entity(object):
     """Base class for Entity"""
 
@@ -474,10 +498,33 @@ class Auditor(object):
         self.member_resolver_by_email = CachedResolver(MemberResolver(self.dropbox_team))
         self.account_resolver = CachedResolver(AccountResolver())
 
+    def __shared_folders_with_contexts(self, shared_folder_with_contexts):
+        """
+        :type shared_folder_with_contexts: list[SharedFolder]
+        """
+        for c in shared_folder_with_contexts:  # type: SharedFolder
+            try:
+                self.__report_shared_folder(c)
+                return
+
+            except Exception as e:
+                trace_recorder.log(
+                    u'Shared folder load info (ignorable): shared_folder_id="%s", as_member="%s", exception="%s"' % (
+                        c.shared_folder.shared_folder_id,
+                        c.context.member.email(),
+                        e))
+
+        trace_recorder.log(
+            u'Skipped loading shared folder shared_folder_id="%s" due to no member exist in the team'
+            u' (e.g. invited but not accepted).' % c.shared_folder.shared_folder_id
+        )
+
+        return
+
     def report(self):
         self.__write_header()
-        for sf in self.__shared_folders():
-            self.__report_shared_folder(sf)
+        for sfid, sfwc in self.__shared_folders().iteritems():
+            self.__shared_folders_with_contexts(sfwc)
 
     def __report_shared_folder(self, shared_folder):
         """
@@ -625,8 +672,16 @@ class Auditor(object):
         members = self.__members()
 
         shared_folders_nested = [self.__shared_folders_for_member(m) for m in members]
+
+        # shared_folders_flatten: [SharedFolder, SharedFolder, ...]
         shared_folders_flatten = [sf for sublist in shared_folders_nested for sf in sublist]
-        return set(shared_folders_flatten)  # remove duplicated
+
+        # shared_folders_by_id: {shared_folder_id: [SharedFolder, SharedFolder, ...], shared_folder_id: [SharedFolder,..
+        shared_folders_by_id = {sf.identity(): [] for sf in shared_folders_flatten}
+        for sf in shared_folders_flatten:
+            shared_folders_by_id[sf.identity()].append(sf)
+
+        return shared_folders_by_id
 
 
 class AuditorCli(object):
