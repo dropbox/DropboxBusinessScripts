@@ -4,6 +4,7 @@ import json
 import argparse
 import sys
 import csv
+import time
 from collections import Counter
 
 reload(sys)
@@ -63,9 +64,10 @@ def getMemberInfo(memberId):
     except urllib2.HTTPError, error:
         print "   DfB ERROR: "+error.read()  
 
-# Get all file metadata, counting files/folders/shares 
+# Get all file metadata, counting files/folders/shares & noting last modification time
 def countFiles(memberEmail, memberId, csvwriter):    
     
+    lastModTime = None;
     files = Counter({'shared_folders':0, 'shared_files':0, 'shared_bytes':0, 'private_folders':0, 'private_files':0, 'private_bytes':0})
     cursor = None
 
@@ -89,6 +91,12 @@ def countFiles(memberEmail, memberId, csvwriter):
                     shared = False
                     if 'parent_shared_folder_id' in md or 'shared_folder' in md:
                         shared = True
+                    
+                    # Look for last time file was modified by the user (private file, or shared & modified by user)
+                    if (shared == False) or (md["modifier"] is not None and md["modifier"]["email"] == memberEmail):
+                        modTime = time.strptime(md["modified"][:-6], "%a, %d %b %Y %H:%M:%S")
+                        if (lastModTime is None or modTime > lastModTime):
+                            lastModTime = modTime
 
                     # Count the folder
                     if (md["is_dir"]):
@@ -105,7 +113,7 @@ def countFiles(memberEmail, memberId, csvwriter):
 
             if response["reset"] and cursor is not None:
                 sys.stderr.write("  ERROR: got a reset!")
-                csvwriter.writerow([memberEmail, "/delta with cursor={!r} returned RESET".format(cursor), "ERROR", "-", "-", "-", "-", "-", "-"])
+                csvwriter.writerow([memberEmail, "/delta with cursor={!r} returned RESET".format(cursor), "ERROR", "-", "-", "-", "-", "-", "-", "-"])
                 break
 
             cursor = response['cursor']
@@ -114,10 +122,10 @@ def countFiles(memberEmail, memberId, csvwriter):
                 break
         
         csvwriter.writerow([memberEmail, str(files["shared_bytes"]), formatSize(files["shared_bytes"]), str(files["shared_files"]), str(files["shared_folders"]),\
-                           str(files["private_bytes"]), formatSize(files["private_bytes"]), str(files["private_files"]), str(files["private_folders"])])
+                           str(files["private_bytes"]), formatSize(files["private_bytes"]), str(files["private_files"]), str(files["private_folders"]), time.strftime('%Y-%m-%d %H:%M:%S', lastModTime)])
         
     except urllib2.HTTPError as error:
-        csvwriter.writerow([memberEmail, "/delta with cursor={!r} unknown error".format(cursor), "ERROR", "-", "-", "-", "-", "-", "-", "-"])
+        csvwriter.writerow([memberEmail, "/delta with cursor={!r} unknown error".format(cursor), "ERROR", "-", "-", "-", "-", "-", "-", "-", "-"])
         sys.stderr.write("  ERROR: {}\n".format(error))
     
 
@@ -136,7 +144,7 @@ else:
     members = getDfbMembers(None)
 
 csvwriter = csv.writer(sys.stdout)
-csvwriter.writerow(['Email','Shared Bytes','Shared Size','Shared Files','Shared Folders','Private Bytes','Private Size','Private Files','Private Folders'])
+csvwriter.writerow(['Email','Shared Bytes','Shared Size','Shared Files','Shared Folders','Private Bytes','Private Size','Private Files','Private Folders','Last File Mod Time'])
 
 for member in members:
     if member["profile"]["status"] == "active":
