@@ -72,22 +72,23 @@ def countSharedLinks(memberId):
     cursor = None
     count = 0
     
-    while True:    
-        params = {}
-        if cursor is not None:
-            params['cursor'] = cursor
-        request = urllib2.Request('https://api.dropboxapi.com/2/sharing/list_shared_links', json.dumps(params))
-        request.add_header("Authorization", "Bearer "+dfbToken)
-        request.add_header("Dropbox-API-Select-User", memberId)
-        request.add_header("Content-Type", "application/json")
-
-        response_string = urllib2.urlopen(request).read()
-        response = json.loads(response_string)
-        count = count + len(response["links"])
-
-        if not response['has_more']:
-            break
-        cursor = response['cursor']
+    try:
+        while True:    
+            params = {}
+            if cursor is not None:
+                params['cursor'] = cursor
+            request = urllib2.Request('https://api.dropboxapi.com/2/sharing/list_shared_links', json.dumps(params))
+            request.add_header("Authorization", "Bearer "+dfbToken)
+            request.add_header("Dropbox-API-Select-User", memberId)
+            request.add_header("Content-Type", "application/json")
+            response_string = urllib2.urlopen(request).read()
+            response = json.loads(response_string)
+            count = count + len(response["links"])
+            if not response['has_more']:
+                break
+            cursor = response['cursor']
+    except Exception as e:
+        return "ERROR"
             
     return count
 
@@ -97,30 +98,33 @@ def countSharedFolders(memberId):
     count = 0
     owner = 0
     
-    while True:    
-        params = {}
+    try:
+        while True:    
+            params = {}
         
-        url = 'https://api.dropboxapi.com/2/sharing/list_folders'
-        if cursor is not None:
-            params['cursor'] = cursor
-            url = 'https://api.dropboxapi.com/2/sharing/list_folders/continue'
+            url = 'https://api.dropboxapi.com/2/sharing/list_folders'
+            if cursor is not None:
+                params['cursor'] = cursor
+                url = 'https://api.dropboxapi.com/2/sharing/list_folders/continue'
             
-        request = urllib2.Request(url, json.dumps(params))
-        request.add_header("Authorization", "Bearer "+dfbToken)
-        request.add_header("Dropbox-API-Select-User", memberId)
-        request.add_header("Content-Type", "application/json")
-
-        response_string = urllib2.urlopen(request).read()
-        response = json.loads(response_string)
-        count = count + len(response["entries"])
-        for entry in response["entries"]:
-            if entry["access_type"][".tag"] == 'owner':
-                owner = owner + 1
-
-        if not 'cursor' in response:
-            break
-        cursor = response['cursor']
-            
+            request = urllib2.Request(url, json.dumps(params))
+            request.add_header("Authorization", "Bearer "+dfbToken)
+            request.add_header("Dropbox-API-Select-User", memberId)
+            request.add_header("Content-Type", "application/json")
+            response_string = urllib2.urlopen(request).read()
+            response = json.loads(response_string)
+            count = count + len(response["entries"])
+            for entry in response["entries"]:
+                if entry["access_type"][".tag"] == 'owner':
+                    owner = owner + 1
+    
+            if not 'cursor' in response:
+                break
+            cursor = response['cursor']
+    
+    except Exception as e:
+        return {"total":"ERROR", "owner":"ERROR", "member":"ERROR"}
+                    
     return {"total":count, "owner":owner, "member":(count-owner)}
 
 def formatSize(num, suffix='B'):
