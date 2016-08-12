@@ -10,6 +10,11 @@ sys.setdefaultencoding('UTF8')
 parser = argparse.ArgumentParser(description='Lists members on a Dropbox for Business Team')
 parser.add_argument( '-q', '--quota', action='store_const', const=True, default=False, dest='quota',
                      help='Include usage quota statistics - may increase script time to completion')
+parser.add_argument( '-l', '--links', action='store_const', const=True, default=False, dest='links',
+                     help='Include shared link count - may increase script time to completion')
+parser.add_argument( '-f', '--folders', action='store_const', const=True, default=False, dest='folders',
+                     help='Include shared folder count - may increase script time to completion')
+
 args = parser.parse_args()
 
 dfbToken = raw_input('Enter your Dropbox Business API App token (Team Member File Access permission): ')
@@ -62,6 +67,65 @@ def getGroups():
     except urllib2.HTTPError, error:
         parser.error(error.read())
 
+# Get the count of shared links for the member
+def countSharedLinks(memberId):
+    cursor = None
+    count = 0
+    
+    try:
+        while True:    
+            params = {}
+            if cursor is not None:
+                params['cursor'] = cursor
+            request = urllib2.Request('https://api.dropboxapi.com/2/sharing/list_shared_links', json.dumps(params))
+            request.add_header("Authorization", "Bearer "+dfbToken)
+            request.add_header("Dropbox-API-Select-User", memberId)
+            request.add_header("Content-Type", "application/json")
+            response_string = urllib2.urlopen(request).read()
+            response = json.loads(response_string)
+            count = count + len(response["links"])
+            if not response['has_more']:
+                break
+            cursor = response['cursor']
+    except Exception as e:
+        return "ERROR"
+            
+    return count
+
+# Get the count of shared folders for the member
+def countSharedFolders(memberId):
+    cursor = None
+    count = 0
+    owner = 0
+    
+    try:
+        while True:    
+            params = {}
+        
+            url = 'https://api.dropboxapi.com/2/sharing/list_folders'
+            if cursor is not None:
+                params['cursor'] = cursor
+                url = 'https://api.dropboxapi.com/2/sharing/list_folders/continue'
+            
+            request = urllib2.Request(url, json.dumps(params))
+            request.add_header("Authorization", "Bearer "+dfbToken)
+            request.add_header("Dropbox-API-Select-User", memberId)
+            request.add_header("Content-Type", "application/json")
+            response_string = urllib2.urlopen(request).read()
+            response = json.loads(response_string)
+            count = count + len(response["entries"])
+            for entry in response["entries"]:
+                if entry["access_type"][".tag"] == 'owner':
+                    owner = owner + 1
+    
+            if not 'cursor' in response:
+                break
+            cursor = response['cursor']
+    
+    except Exception as e:
+        return {"total":"ERROR", "owner":"ERROR", "member":"ERROR"}
+                    
+    return {"total":count, "owner":owner, "member":(count-owner)}
 
 def formatSize(num, suffix='B'):
     for unit in ['','K','M','G','T','P','E','Z']:
@@ -73,26 +137,17 @@ def formatSize(num, suffix='B'):
 
 csvwriter = csv.writer(sys.stdout)
 
+header = ['Email', 'First Name', 'Last Name', 'Status', 'Groups']
+
 if args.quota:
-    csvwriter.writerow(['Email', \
-                    'First Name', \
-                    'Last Name', \
-                    'Status', \
-                    'Locale', \
-                    'Normal Usage', \
-                    'Normal Usage (bytes)', \
-                    'Team Shared Usage', \
-                    'Team Shared Usage (bytes)',
-                    'Groups'
-                    ])
-else:
-    csvwriter.writerow(['Email', \
-                    'First Name', \
-                    'Last Name', \
-                    'Status', \
-                    'Locale', \
-                    'Groups'
-                    ])
+    header = header + ['Locale', 'Normal Usage', 'Normal Usage (bytes)', 'Team Shared Usage', 'Team Shared Usage (bytes)']
+if args.links:
+    header = header + ['Shared Links']
+if args.folders:
+    header = header + ['Shared Folders (Total)', 'Shared Folders (Owner)', 'Shared Folders (Member)']
+
+    
+csvwriter.writerow(header)
 
 groupMap = getGroups()
 
@@ -106,54 +161,38 @@ for member in getDfbMembers(None):
                 if groupstr != '':
                     groupstr = groupstr + ", "
                 groupstr = groupstr + groupMap[group]
-        
-    # Active members have account info with more info
+    
+    member_row = [member["profile"]["email"], \
+                  member["profile"]["given_name"], \
+                  member["profile"]["surname"], \
+                  member["profile"]["status"],
+                  groupstr]
+    
+    # Member info & quota
     if args.quota:
-
         if member["profile"]["status"] == "active":
-
-            # The info lookup for space usage adds a little bit of time
             info = getMemberInfo(member["profile"]["member_id"])
-            csvwriter.writerow([member["profile"]["email"], \
-                                member["profile"]["given_name"], \
-                                member["profile"]["surname"], \
-                                member["profile"]["status"], \
-                                info["locale"], \
-                                formatSize(info["quota_info"]["normal"]), \
-                                str(info["quota_info"]["normal"]), \
-                                formatSize(info["quota_info"]["shared"]), \
-                                str(info["quota_info"]["shared"]), \
-                                groupstr
-                               ])
+            member_row = member_row + [info["locale"], \
+                                       formatSize(info["quota_info"]["normal"]), \
+                                       str(info["quota_info"]["normal"]), \
+                                       formatSize(info["quota_info"]["shared"]), \
+                                       str(info["quota_info"]["shared"])]
         else:
-            csvwriter.writerow([member["profile"]["email"], \
-                                member["profile"]["given_name"], \
-                                member["profile"]["surname"], \
-                                member["profile"]["status"], \
-                                "-", \
-                                "-", \
-                                "-", \
-                                "-", \
-                                "-" \
-                               ])
-    else:
-
+            member_row = member_row + ['-', '-', '-', '-', '-']
+    
+    # Shared links count
+    if args.links:
         if member["profile"]["status"] == "active":
-
-            # The info lookup for space usage adds a little bit of time
-            info = getMemberInfo(member["profile"]["member_id"])
-            csvwriter.writerow([member["profile"]["email"], \
-                                member["profile"]["given_name"], \
-                                member["profile"]["surname"], \
-                                member["profile"]["status"], \
-                                info["locale"], \
-                                groupstr
-                               ])
+            member_row = member_row + [countSharedLinks(member["profile"]["member_id"])]
         else:
-            csvwriter.writerow([member["profile"]["email"], \
-                                member["profile"]["given_name"], \
-                                member["profile"]["surname"], \
-                                member["profile"]["status"], \
-                                "-", \
-                                "-" \
-                               ])
+            member_row = member_row + ['-']
+
+    # Shared folder count
+    if args.folders:
+        if member["profile"]["status"] == "active":
+            shares = countSharedFolders(member["profile"]["member_id"])
+            member_row = member_row + [shares["total"], shares["owner"], shares["member"]]
+        else:
+            member_row = member_row + ['-', '-', '-']
+
+    csvwriter.writerow(member_row)
