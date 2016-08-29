@@ -1,3 +1,5 @@
+# Deprovision users from CSV with option to change their email and let the keep their account as Dropbox Basic
+
 import urllib2
 import json
 import re
