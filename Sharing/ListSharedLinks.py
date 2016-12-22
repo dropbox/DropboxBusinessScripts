@@ -22,8 +22,16 @@ dfbToken = raw_input('Enter your Dropbox Business API App token (Team Member Fil
 
 
 #Look up a DfB member from an email address
-def getDfbMember(email):
-    request = urllib2.Request('https://api.dropbox.com/1/team/members/get_info', json.dumps({'email': email}))
+def getDfbMember(emails):
+
+    members = []
+
+    for e in emails:
+        members.append({".tag": "email", "email": e})
+
+    data = {"members": members}
+
+    request = urllib2.Request('https://api.dropboxapi.com/2/team/members/get_info', json.dumps(data))
     request.add_header("Authorization", "Bearer "+dfbToken)
     request.add_header("Content-type", 'application/json')
     try:
@@ -35,12 +43,24 @@ def getDfbMember(email):
 
 
 # Get all DfB members, paging through results if necessary
-def getDfbMembers(cursor):    
-    data = {"limit": 100}
+def getDfbMembers(cursor):
+
+    data = {}
+    endpoint = ''
+
     if cursor is not None:
-        data["cursor"] = cursor
+        data = {
+            "cursor": cursor
+        }
+        endpoint = 'https://api.dropboxapi.com/2/team/members/list/continue'
+    else:
+        data = {
+            "limit": 100,
+            "include_removed": False
+        }
+        endpoint = 'https://api.dropboxapi.com/2/team/members/list'
     
-    request = urllib2.Request('https://api.dropbox.com/1/team/members/list', json.dumps(data))
+    request = urllib2.Request(endpoint, json.dumps(data))
     request.add_header("Authorization", "Bearer "+dfbToken)
     request.add_header("Content-type", 'application/json')
     try:
@@ -78,19 +98,18 @@ def listSharedLinks(memberEmail, memberId, csvwriter):
     except urllib2.HTTPError as error:
         csvwriter.writerow([memberEmail, error, "ERROR", memberId])
         sys.stderr.write("  ERROR: {}\n".format(error))
-       
+
+csvwriter = csv.writer(sys.stdout)
+csvwriter.writerow(['User', 'Path', 'Visibility', 'URL'])
        
 members = []
 
 if args.users is not None:
-    members = map(getDfbMember, args.users) 
+    members = getDfbMember(args.users)
 else:
     members = getDfbMembers(None)
 
-csvwriter = csv.writer(sys.stdout)
-csvwriter.writerow(['User', 'Path', 'Visibility', 'URL'])
-
 for member in members:
-    if member["profile"]["status"] == "active":
-        listSharedLinks(member["profile"]["email"], member["profile"]["member_id"], csvwriter)
+    if member["profile"]["status"][".tag"] == "active":
+        listSharedLinks(member["profile"]["email"], member["profile"]["team_member_id"], csvwriter)
 
