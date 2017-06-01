@@ -113,8 +113,6 @@ def get_team_sessions(cursor):
 def list_sessions(member_id, member_email, sessions, all_team):
 
     # Look up member email, if we don't have it
-    if member_email is None:
-        member_email = get_dfb_member('team_member_id',member_id)['profile']['email']
 
     returned_sessions = []
 
@@ -125,6 +123,8 @@ def list_sessions(member_id, member_email, sessions, all_team):
             if show_session(s):
                 if 'created' not in s:
                     s['created'] = ''
+                if member_email is None:
+                    member_email = get_dfb_member('team_member_id',member_id)['profile']['email']
                 csv_writer.writerow(['Desktop', s['created'], member_email, s['platform'] + ' ' + s['host_name'], s['session_id']])
                 returned_sessions.append({'.tag': 'desktop_client', 'session_id': s['session_id'],
                                           'team_member_id': member_id, 'delete_on_unlink': False})
@@ -136,6 +136,8 @@ def list_sessions(member_id, member_email, sessions, all_team):
             if show_session(s):
                 if 'created' not in s:
                     s['created'] = ''
+                if member_email is None:
+                    member_email = get_dfb_member('team_member_id',member_id)['profile']['email']
                 csv_writer.writerow(['Mobile', s['created'], member_email, s['device_name'], s['session_id']])
                 returned_sessions.append({'.tag': 'mobile_client', 'session_id': s['session_id'],
                                           'team_member_id': member_id })
@@ -147,6 +149,8 @@ def list_sessions(member_id, member_email, sessions, all_team):
             if show_session(s):
                 if 'created' not in s:
                     s['created'] = ''
+                if member_email is None:
+                    member_email = get_dfb_member('team_member_id',member_id)['profile']['email']
                 csv_writer.writerow(['Web', s['created'], member_email, s['os'] + ' - ' + s['browser'], s['session_id']])
                 returned_sessions.append({'.tag': 'web_session', 'session_id': s['session_id'],
                                           'team_member_id': member_id})
