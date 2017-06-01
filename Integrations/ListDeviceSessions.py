@@ -126,7 +126,7 @@ def list_sessions(member_id, member_email, sessions, all_team):
                     s['created'] = ''
                 csv_writer.writerow(['Desktop', s['created'], member_email, s['platform'] + ' ' + s['host_name']])
                 returned_sessions.append({'.tag': 'desktop_client', 'session_id': s['session_id'],
-                                          'team_member_id': member_id, 'delete_on_unlink': True})
+                                          'team_member_id': member_id, 'delete_on_unlink': False})
 
     # Mobile sessions
     key = 'mobile_clients' if all_team else 'mobile_client_sessions'    
