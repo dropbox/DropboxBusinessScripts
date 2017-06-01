@@ -5,7 +5,6 @@ import json
 import argparse
 import sys
 import datetime
-import dateutil.parser
 import csv
 
 reload(sys)
@@ -18,6 +17,8 @@ parser = argparse.ArgumentParser(description='Lists all linked devices / session
 parser.add_argument('-u', '--user', dest='users', action='append',
                     help='Target users (email address) to scan. All team members will be scanned if unspecified. '
                          'You may pass multiple -u arguments.')
+parser.add_argument('-r', '--revoke', dest='revoke', action='store_true', default=False,
+                    help='Revoke all matching sessions.')
 parser.add_argument('-w', '--web', dest='web', action='store_true', default=False,
                     help='Show web sessions.')
 parser.add_argument('-d', '--desktop', dest='desktop', action='store_true', default=False,
@@ -124,7 +125,7 @@ def list_sessions(member_id, member_email, sessions, all_team):
             if show_session(s):
                 if 'created' not in s:
                     s['created'] = ''
-                csv_writer.writerow(['Desktop', s['created'], member_email, s['platform'] + ' ' + s['host_name']])
+                csv_writer.writerow(['Desktop', s['created'], member_email, s['platform'] + ' ' + s['host_name'], s['session_id']])
                 returned_sessions.append({'.tag': 'desktop_client', 'session_id': s['session_id'],
                                           'team_member_id': member_id, 'delete_on_unlink': False})
 
@@ -135,7 +136,7 @@ def list_sessions(member_id, member_email, sessions, all_team):
             if show_session(s):
                 if 'created' not in s:
                     s['created'] = ''
-                csv_writer.writerow(['Mobile', s['created'], member_email, s['device_name']])
+                csv_writer.writerow(['Mobile', s['created'], member_email, s['device_name'], s['session_id']])
                 returned_sessions.append({'.tag': 'mobile_client', 'session_id': s['session_id'],
                                           'team_member_id': member_id })
 
@@ -146,7 +147,7 @@ def list_sessions(member_id, member_email, sessions, all_team):
             if show_session(s):
                 if 'created' not in s:
                     s['created'] = ''
-                csv_writer.writerow(['Web', s['created'], member_email, s['os'] + ' - ' + s['browser']])
+                csv_writer.writerow(['Web', s['created'], member_email, s['os'] + ' - ' + s['browser'], s['session_id']])
                 returned_sessions.append({'.tag': 'web_session', 'session_id': s['session_id'],
                                           'team_member_id': member_id})
 
@@ -158,7 +159,7 @@ def show_session(session):
     if before_date is None:
         return True
     else:
-        return 'created' in session and dateutil.parser.parse(session['created']).replace(tzinfo=None) < before_date
+        return 'created' in session and datetime.datetime.strptime(session['created'][:10],'%Y-%m-%d').replace(tzinfo=None) < before_date
 
 
 # Revoke a list of sessions
@@ -170,10 +171,13 @@ def deactivate_sessions(sessions):
     try:
         json.loads(urllib2.urlopen(request).read())
         print 'Deactivated ' + str(len(sessions)) + ' session(s).'
+        csv_writer.writerow(['Platform', 'Owner', 'Session ID'])
+        for s in sessions:
+            csv_writer.writerow([s['.tag'], get_dfb_member('team_member_id',s['team_member_id'])['profile']['email'], s['session_id']]) 
     except urllib2.HTTPError, error:
         parser.error(error.read())
 
-csv_writer.writerow(['Platform', 'Created Date', 'Owner', 'Device'])
+csv_writer.writerow(['Platform', 'Created Date', 'Owner', 'Device', 'Session ID'])
 
 sessions = []
 
@@ -185,9 +189,9 @@ if args.users is not None:
 else:
     sessions = get_team_sessions(None)
 
-# Uncomment to prompt to deactivate listed sessions ##
-# if raw_input("Deactivate sessions? Type 'YES' to confirm. ") == "YES":
-#    deactivate_sessions(sessions)
-# else:
-#    print "Skipping deactivation"
+if args.revoke:
+    if raw_input("Deactivate sessions? Type 'YES' to confirm. ") == "YES":
+        deactivate_sessions(sessions)
+    else:
+        print "Skipping deactivation"
 
