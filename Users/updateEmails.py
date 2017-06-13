@@ -15,11 +15,12 @@ Email address in CSV source file will be converted to lowercase for comparison t
 
 The following output files are created. 
 
-YY-MM-DD-converted.csv   			-> List of users in Dropbox account converted to NEW email addresses.
-YY-MM-DD-failedconversion.csv 		-> List of users we TRIED to convert but it failed for some reason. ( non 200 API response )
-YY-MM-DD-notFoundInSourceFile.csv   -> List of users that exist in Dropbox but who's email addresses not found in CSV OLD emails.
-YY-MM-DD-filteredOut.csv     		-> List of users in Dropbox account who's email addresses skipped as match the 'filterOut' condition
-YY-MM-DD-oldEqualsNew.csv           -> List of users we found in Dropbox and Source OLD email list, but who's NEW email address is same as old.
+YY-MM-DD-converted.csv   			     -> List of users in Dropbox account converted to NEW email addresses.
+YY-MM-DD-failedconversion.csv 		     -> List of users we TRIED to convert but it failed for some reason. ( non 200 API response )
+YY-MM-DD-notFoundInSourceFile.csv        -> List of users that exist in Dropbox but who's email addresses not found in CSV source emails.
+YY-MM-DD-sourceItemNotFoundInDropbox.csv -> List of users from source file not found in Dropbox. 
+YY-MM-DD-filteredOut.csv     		     -> List of users in Dropbox account who's email addresses skipped as match the 'filterOut' condition
+YY-MM-DD-oldEqualsNew.csv                -> List of users we found in Dropbox and Source email list, but who's NEW email address is same as old.
 """
 
 
@@ -221,9 +222,11 @@ print (" We have the Dropbox users in memory from %s API Calls. it took %s") % (
 """
 
 notFoundInSource = []   # List of users in Dropbox who's email can't be found in Source
+sourceNotFoundInDBX = [] # List of email addresses in source file not found in Dropbox
 convertedUsers = []
 failedToConvert = []
 oldEqualsNew = []
+dbxUsersList = {}
 
 countConverted = 0
 
@@ -232,8 +235,10 @@ totalStartTime = datetime.datetime.fromtimestamp(time.time())
 # Iterate through Dropbox List
 for member in dbxUsers:
 	
-	# Check for Dropbox User in ADFS Source list
+	# Check for Dropbox User in Source list
 	newEmailAddr = userList.get( member[0] )
+
+	dbxUsersList[member[0]] = member[0]
 
 	# If we can't find it there... 
 	if newEmailAddr is None:
@@ -272,6 +277,20 @@ for member in dbxUsers:
 
 totalStopTime = datetime.datetime.fromtimestamp(time.time())
 
+
+# Lastly, iterate once more through source file list and see if any don't exist in list of Dropbox Members
+for user in userList:
+
+	# try locate in dbxUsers
+	match = dbxUsersList.get( user )
+
+	if match is None:
+		if ( not user == 'emailaddress' ):
+			sourceNotFoundInDBX.append( [user, ''] )
+
+
+
+
 # Print total time taken to run through and convert users
 print ("\n\n*******************************************************")
 print ("Total Time to convert: %s ") % getTimeInHoursMinutesSeconds((totalStopTime-totalStartTime).total_seconds())
@@ -298,7 +317,12 @@ if skippedExistingUsers != []:
 # Write List of Users Not Found to File
 if notFoundInSource != []:
 	writeToFile( 'notFoundInSourceFile.csv', notFoundInSource )
-	print (" - Couldn't find %s users in source file") % len(notFoundInSource)
+	print (" - Couldn't find %s Dropbox users in source file") % len(notFoundInSource)
+
+# Write List of Users in source file but not found in Dropbox
+if sourceNotFoundInDBX != []:
+	writeToFile( 'sourceItemNotFoundInDropbox.csv', sourceNotFoundInDBX )
+	print (" - Couldn't find %s email address from Sourcefile in Drobpox.") % len(sourceNotFoundInDBX)
 
 # Write List of Users who's old email address is same as new
 if oldEqualsNew != []:
