@@ -20,7 +20,7 @@ def getDfbMembers(cursor):
     if cursor is not None:
         data["cursor"] = cursor
     
-    request = urllib2.Request('https://api.dropbox.com/1/team/members/list', json.dumps(data))
+    request = urllib2.Request('https://api.dropboxapi.com/2/team/members/list', json.dumps(data))
     request.add_header("Authorization", "Bearer "+dfbToken)
     request.add_header("Content-type", 'application/json')
     try:
@@ -38,23 +38,23 @@ def getDfbMembers(cursor):
 
 # Sends a reminder
 def remind(memberId):    
-    params = {'member_id':memberId}
-    request = urllib2.Request('https://api.dropbox.com/1/team/members/send_welcome_email', data=json.dumps(params))
+    params = {'.tag':'team_member_id','team_member_id':memberId}
+    request = urllib2.Request('https://api.dropboxapi.com/2/team/members/send_welcome_email', data=json.dumps(params))
     request.add_header("Authorization", "Bearer "+dfbToken)
     request.add_header("Content-type", 'application/json')
     try:
         urllib2.urlopen(request).read()
     except urllib2.HTTPError, error:
         parser.error(error.read())
-
+ 
 
 members = getDfbMembers(None)
 
 print "Reminding invited members.."
 
 for member in members:
-    if member["profile"]["status"] == "invited":
+    if member["profile"]["status"][".tag"] == "invited":
         print "  reminding "+member["profile"]["email"]
-        remind(member["profile"]["member_id"])
+        remind(member["profile"]["team_member_id"])
 
 print "Done"
