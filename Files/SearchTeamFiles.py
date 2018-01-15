@@ -20,7 +20,7 @@ dfbToken = raw_input('Enter your Dropbox Business API App token (Team Member Fil
 
 #Look up a DfB member from an email address
 def getDfbMember(email):
-    request = urllib2.Request('https://api.dropbox.com/1/team/members/get_info', json.dumps({'email':email}))
+    request = urllib2.Request('https://api.dropboxapi.com/2/team/members/get_info', json.dumps({'email':email}))
     request.add_header("Authorization", "Bearer "+dfbToken)
     request.add_header("Content-type", 'application/json')
     try:
@@ -28,6 +28,7 @@ def getDfbMember(email):
     
     # Exit on error here.  Probably user not found or bad OAuth token.  Show DfB response.
     except urllib2.HTTPError, error:
+        print ( "ERROR: " + error.read() )
         parser.error(error.read())
 
 
@@ -37,7 +38,7 @@ def getDfbMembers(cursor):
     if cursor is not None:
         data["cursor"] = cursor
     
-    request = urllib2.Request('https://api.dropbox.com/1/team/members/list', json.dumps(data))
+    request = urllib2.Request('https://api.dropboxapi.com/2/team/members/list', json.dumps(data))
     request.add_header("Authorization", "Bearer "+dfbToken)
     request.add_header("Content-type", 'application/json')
     try:
@@ -63,7 +64,7 @@ def searchFiles(memberEmail, memberId, csvwriter):
         while True:
             params = {"start":start, "path":"", "mode":args.mode, "max_results":2, "query":args.query}
                 
-            request = urllib2.Request('https://api.dropbox.com/2/files/search', data=json.dumps(params))
+            request = urllib2.Request('https://api.dropboxapi.com/2/files/search', data=json.dumps(params))
             request.add_header("Authorization", "Bearer "+dfbToken)
             request.add_header("Dropbox-API-Select-User", memberId)
             request.add_header("Content-type", 'application/json')
@@ -108,7 +109,8 @@ csvwriter = csv.writer(sys.stdout)
 
 csvwriter.writerow(['User', 'Path', 'Type', 'Match Type', 'Size (bytes)', 'Size (formatted)', 'Modified'])
 
+
 #TODO: Thread this?
 for member in members:
-    if member["profile"]["status"] == "active":
-        files = searchFiles(member["profile"]["email"], member["profile"]["member_id"], csvwriter)
+    if member["profile"]["status"][".tag"] == "active":
+        files = searchFiles(member["profile"]["email"], member["profile"]["team_member_id"], csvwriter)
