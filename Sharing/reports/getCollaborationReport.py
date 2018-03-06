@@ -38,7 +38,7 @@ YY-MM-DD-paths.csv   			-> List of user and the paths to publicly shared files.
 
 
 """
-Set your OAuth Token here with 'Team Member Management' permissions
+Set your OAuth Tokens here 
 """
 
 aTokenTMFA = ''     # Team Member File Access
