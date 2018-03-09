@@ -256,30 +256,31 @@ if (not bHaveCSV):
 		print("\n\nUser did not enter a 'n' or a 'y' input. Ending script.")
 		exit();
 
-# Open file of users to analyze
-with open( sourceMembersToReportOn, 'rb') as csvfileRead:
-	# Open file to read from
-	reader = csv.reader(csvfileRead)
+if ( not bAnalyzeAll ):
+	# Open file of users to analyze
+	with open( sourceMembersToReportOn, 'rb') as csvfileRead:
+		# Open file to read from
+		reader = csv.reader(csvfileRead)
 
-	#Iterate through each row of the CSV.
-	for row in reader:
-		gUsersToAnalyze.append( row[0].lower() ) # Lower case so we can compare to Dropbox ( always lowercase )
+		#Iterate through each row of the CSV.
+		for row in reader:
+			gUsersToAnalyze.append( row[0].lower() ) # Lower case so we can compare to Dropbox ( always lowercase )
 
-	if ( len(gUsersToAnalyze) <= 0 ):
+		if ( len(gUsersToAnalyze) <= 0 ):
 
-		# Check that we have users
-		print("We could not any users in file '%s' to report on. " % sourceMembersToReportOn)
-		print('Would you like to analyze ALL users on the team. Note this could be a very slow process.') 
-		lsAnswer = raw_input("Type 'y' to process ALL or 'n' to cancel this script: ")
+			# Check that we have users
+			print("We could not any users in file '%s' to report on. " % sourceMembersToReportOn)
+			print('Would you like to analyze ALL users on the team. Note this could be a very slow process.') 
+			lsAnswer = raw_input("Type 'y' to process ALL or 'n' to cancel this script: ")
 
-		if ( lsAnswer == 'y' or lsAnswer == 'Y'):
-			bAnalyzeAll = True
-		elif ( lsAnswer == 'n' or lsAnswer == 'N'):
-			print( '\nExiting script\n')
-			exit()
-		else:
-			print("\n\nUser did not enter a 'n' or a 'y' input. Ending script.")
-			exit();
+			if ( lsAnswer == 'y' or lsAnswer == 'Y'):
+				bAnalyzeAll = True
+			elif ( lsAnswer == 'n' or lsAnswer == 'N'):
+				print( '\nExiting script\n')
+				exit()
+			else:
+				print("\n\nUser did not enter a 'n' or a 'y' input. Ending script.")
+				exit();
 
 
 
