@@ -13,7 +13,7 @@ from Classes import SharedFolder      # Object to represent a single shared fold
 """
 
 BE WARNED:
-* You with discression. 
+* Use with discression. 
 * Not testing in anger so accuracy of reporting TBC.
 * Not threaded so will be slow for larger Teams / complex folder structures
  
