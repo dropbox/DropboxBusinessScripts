@@ -13,7 +13,17 @@ The intention of this script is to:
 Pull out and generate a CSV listing of all the members of your Dropbox Team.
 The script requires you to set the variable aTokenTMM equal to your Team Member Management OAuth token.
 
-The outputted CSV will have the 'first name','last name','email address', 'account status', 'role'
+The outputted CSV will have the 
+'First name',
+'Last name',
+'Email address', 
+'Account status', 
+'Role', 
+'Team member ID', 
+'External ID', 
+'Email verified', 
+'Joined on'
+
 
 ********************************************************************************************************************
 """
@@ -23,8 +33,7 @@ The outputted CSV will have the 'first name','last name','email address', 'accou
 """
 Set your OAuth Token here with 'Team Member Management' permissions
 """
-aTokenTMM = ''
-
+aTokenTMM = ''       # TMM Token
 
 """
 ********************************************************************************************************************
@@ -36,7 +45,7 @@ aTokenTMM = ''
 # Function to return current Timestamp 
 #############################################
 def getTimeYMD():
-  lRightNow = datetime.datetime.fromtimestamp(time.time()).strftime('%y%m%d-%H-%M-%S' ) 
+  lRightNow = datetime.datetime.fromtimestamp(time.time()).strftime('%y%m%d-%H-%M-%S') 
   return lRightNow;
 
 #############################################
@@ -74,7 +83,7 @@ totalTimeStart = datetime.datetime.fromtimestamp(time.time())
 
 fileName = "User List.csv"							# Do not place a path 
 aURL = 'https://api.dropboxapi.com/2/team/members/list'
-aData = json.dumps({'limit': 200}) 
+aData = json.dumps({'limit': 200, 'include_removed': True}) 
 
 
 """
@@ -118,7 +127,7 @@ totalMembers = 0
 with open( fileName, 'wb') as csvfile:
 	writer = csv.writer(csvfile, delimiter=',')
 	# Write the Column Headers
-	writer.writerow(['first name','last name','email address', 'account status', 'role'])
+	writer.writerow(['First name','Last name','Email address', 'Account status', 'Role', 'Team member ID', 'External ID', 'Email verified', 'Joined on'])
 
 	while hasMore:
 		""" Make the API call """ 
@@ -140,13 +149,26 @@ with open( fileName, 'wb') as csvfile:
 
 		# Iterate over the Members in the JSON
 		for aMember in members['members']:
+
+			externalID = ""
+			if( 'external_id' in aMember['profile'] ):
+				externalID = aMember['profile']['external_id'].encode('utf-8').strip()
+
+			joinedOnDay = ""
+			if( 'joined_on' in aMember['profile'] ):
+				joinedOnDay = aMember['profile']['joined_on'].encode('utf-8').strip()
+
 			writer.writerow([aMember['profile']['name']['given_name'].encode('utf-8').strip(), 
 				aMember['profile']['name']['surname'].encode('utf-8').strip(), 
 				aMember['profile']['email'].encode('utf-8').strip(), 
 				aMember['profile']['status']['.tag'].encode('utf-8').strip(),
-				aMember['role']['.tag'].encode('utf-8').strip()])
-
-		hasMore = members['has_more']                                                     # Note if there's another cursor call to make. 
+				aMember['role']['.tag'].encode('utf-8').strip(),
+				aMember['profile']['team_member_id'].encode('utf-8').strip(),
+				externalID,
+				aMember['profile']['email_verified'], 
+				joinedOnDay])
+			
+			hasMore = members['has_more']                                                     # Note if there's another cursor call to make. 
 
 		# If it's the first run, from this point onwards the API call is the /continue version.
 		if ( loopCounter == 0 ):
