@@ -6,7 +6,7 @@ import requests
 import os                             # Allows for the clearing of the Terminal Window
 import csv                            # Allows outputting to CSV file
 import time, datetime
-import mammoth						  # Used to convert Word to Markdown
+import mammoth			      # Used to convert Word to Markdown/HTML
 import glob
 
 """
