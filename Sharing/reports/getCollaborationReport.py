@@ -12,6 +12,8 @@ from Classes import SharedFolder      # Object to represent a single shared fold
 
 """
 
+Written using Python 2.6
+
 BE WARNED:
 * Use with discression. 
 * Not testing in anger so accuracy of reporting TBC.
