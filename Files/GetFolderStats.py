@@ -140,7 +140,6 @@ def getSumOfPath(aPath, aPathID, aMasterFolderList, team_member_id):
 
 		# Note the JSON response
 		pathFilesAndFolders = aResult.json()
-		pprint.pprint( pathFilesAndFolders )
 
 		# Loop through each item in list
 		for item in pathFilesAndFolders['entries']: 
