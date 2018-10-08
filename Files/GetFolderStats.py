@@ -10,14 +10,14 @@ import time, datetime
 import sys
 
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+#reload(sys)
+#sys.setdefaultencoding('UTF8')
 
 """
 A Script to iterate over all members of a team, for each member pull out a list of their folders and 
 Files and give a summary of the size of data, number of files / folders. 
 
-Note: Report shows folders user has mounted ( added to their Dropbox account ) and does not differentiate
+Note: Report shows folders the user has mounted ( added to their Dropbox account ) and does not differentiate
       between owner and collaborated on folders. 
 
 You can optionally provide a CSV file 'config.csv' listing out on separate rows the email addresses of 
@@ -37,11 +37,14 @@ It has the following column headers:
   No. Folders in folder: Number of folders in this folder. Excludes sub-folders and their content. 
 
 Requirements:
-  Script writen testing on Python 2.7.10
+  Script tested on Python 3.6.5
 
   Two Dropbox API Tokens needed needed inserted just below this comments section.
   * Team Member File Access
   * Team Member Management
+
+Pre-requisites:
+* Scripts requires library 'Requests' - You can install using "pip install requests"
 
 """
 
@@ -53,8 +56,8 @@ aTokenTMFA = ''     # Team Member File Access
 
 sourceMembersToReportOn = 'config.csv'
 
-
-
+gIncludeTeamFolders = True
+gIncludeNonTeamFolders = True
 
 
 """
@@ -77,6 +80,7 @@ def getTimeYMDHM():
 class PathSummary:
 	def __init__(self):
 		self.path = ''
+		self.id = ''
 		self.file_size_in_bytes = 0
 		self.file_folder_size_in_bytes = 0
 		self.num_files = 0
@@ -86,29 +90,23 @@ class PathSummary:
 # Function to print Message to console in a tidy box
 #############################################
 def printmessageblock( str ):
-  print "\n*********************************************************"
-  print "* %s" % (str)
-  print "*********************************************************\n"
+  print ("\n*********************************************************")
+  print ("* %s" % (str))
+  print ("*********************************************************\n")
   return;
 
 #############################################
 # Function to print Message to console in a tidy box
 #############################################
-def printTimeInHoursMinutesSeconds( sec ):
-    sec = int(sec)
-    hrs = sec / 3600
-    sec -= 3600*hrs
+def getTimeInHoursMinutesSeconds( sec ):
 
-    mins = sec / 60
-    sec -= 60*mins
-
-    return '%s hrs, %s mins, %s sec' % ( hrs, mins, sec);
+    return time.strftime("%H hrs %M mins %S sec", time.gmtime(sec))
 
 #############################################
 # Recursive Function to take a path and analyse
 # it and it's child folders
 #############################################
-def getSumOfPath(aPath, aMasterFolderList, team_member_id):
+def getSumOfPath(aPath, aPathID, aMasterFolderList, team_member_id):
 
 	aURL = 'https://api.dropboxapi.com/2/files/list_folder'
 	aData = json.dumps({'path': aPath,
@@ -120,12 +118,13 @@ def getSumOfPath(aPath, aMasterFolderList, team_member_id):
 		'limit': 500}) 
 
 	lHeadersTMFA = {'Content-Type': 'application/json',
-		'Authorization': 'Bearer %s' % aTokenTMFA, 
+		'Authorization': 'Bearer %s' % gTokenTMFA, 
 		'Dropbox-API-Select-User': '%s' % team_member_id} 
 
 	# Summary Item we'll return
 	myPathSummary = PathSummary()
 	myPathSummary.path = aPath
+	myPathSummary.id = aPathID
 
 	hasMore = True;      # Controls how long we stay in while loop loading users. 
 	loopCounter = 0      # Count of how many times we hit the API 
@@ -141,6 +140,7 @@ def getSumOfPath(aPath, aMasterFolderList, team_member_id):
 
 		# Note the JSON response
 		pathFilesAndFolders = aResult.json()
+		pprint.pprint( pathFilesAndFolders )
 
 		# Loop through each item in list
 		for item in pathFilesAndFolders['entries']: 
@@ -151,10 +151,11 @@ def getSumOfPath(aPath, aMasterFolderList, team_member_id):
 				myPathSummary.file_folder_size_in_bytes += item['size']
 				myPathSummary.num_files += 1
 			
-			# If it's a folder call recursively call this function
+			# If it's a folder, recursively call this function
 			else:
 				myPathSummary.num_folders += 1
-				summary = getSumOfPath( item['path_lower'], aMasterFolderList, team_member_id )
+				
+				summary = getSumOfPath( item['path_lower'], item['id'], aMasterFolderList, team_member_id )
 				myPathSummary.file_folder_size_in_bytes += summary.file_folder_size_in_bytes
 				aMasterFolderList.append( summary )
 
@@ -245,7 +246,7 @@ bHaveCSV = os.path.isfile( sourceMembersToReportOn )
 if (not bHaveCSV):
 	print('We could not find a file listing users to report on. ')
 	print('Would you like to analyze ALL users on the team. Note this could be a very slow process.') 
-	lsAnswer = raw_input("Type 'y' to process ALL or 'n' to cancel this script: ")
+	lsAnswer = input("Type 'y' to process ALL or 'n' to cancel this script: ")
 
 	if ( lsAnswer == 'y' or lsAnswer == 'Y'):
 		bAnalyzeAll = True
@@ -256,9 +257,9 @@ if (not bHaveCSV):
 		print("\n\nUser did not enter a 'n' or a 'y' input. Ending script.")
 		exit();
 
-if ( not bAnalyzeAll ):
+if (not bAnalyzeAll):
 	# Open file of users to analyze
-	with open( sourceMembersToReportOn, 'rb') as csvfileRead:
+	with open( sourceMembersToReportOn, 'rt') as csvfileRead:
 		# Open file to read from
 		reader = csv.reader(csvfileRead)
 
@@ -271,7 +272,7 @@ if ( not bAnalyzeAll ):
 			# Check that we have users
 			print("We could not any users in file '%s' to report on. " % sourceMembersToReportOn)
 			print('Would you like to analyze ALL users on the team. Note this could be a very slow process.') 
-			lsAnswer = raw_input("Type 'y' to process ALL or 'n' to cancel this script: ")
+			lsAnswer = input("Type 'y' to process ALL or 'n' to cancel this script: ")
 
 			if ( lsAnswer == 'y' or lsAnswer == 'Y'):
 				bAnalyzeAll = True
@@ -291,11 +292,72 @@ if ( not bAnalyzeAll ):
 # 2. If not, ask the user to enter it.
 # ############################################
 """
-if (aTokenTMFA == ''):
-  aTokenTMFA = raw_input('Enter your Dropbox Business API App token (Team Member File Access permission): ')
+if (gTokenTMFA == ''):
+  gTokenTMFA = raw_input('Enter your Dropbox Business API App token (Team Member File Access permission): ')
 
-if (aTokenTMM == ''):
-  aTokenTMM = raw_input('Enter your Dropbox Business API App token (Team Member Management permission): ')
+if (gTokenTMM == ''):
+  gTokenTMM = raw_input('Enter your Dropbox Business API App token (Team Member Management permission): ')
+
+
+# Note the standard output
+gstdout = sys.stdout
+# Redirect standard output to log file
+sys.stdout = open('logfile.txt', 'w')
+
+
+"""
+#############################################
+# Step 3
+# 1. Get a list of all Team Folders
+#############################################
+"""
+aHeaders = {'Content-Type': 'application/json', 
+		'Authorization': 'Bearer %s' % gTokenTMFA}
+aURL = 'https://api.dropboxapi.com/2/team/team_folder/list'
+aData = json.dumps({'limit': 300}) 
+
+hasMore = True;      # Controls how long we stay in while loop loading users. 
+loopCounter = 0      # Count of how many times we hit the API 
+dbxTeamFolders = []        # List of Dropbox Users
+dbxTFLookup = {}  # A quick reference list of key-pair values of team-member-ids and email addressses 
+
+
+print ("> Retrieving Team Folders via API")
+timestart = datetime.datetime.fromtimestamp(time.time())			# Used to note start and calculate total time script took to run.
+
+while hasMore:
+
+	print (">>> API call")
+	""" Make the API call """ 
+	aResult = requests.post(aURL, headers=aHeaders, data=aData)
+
+	print ("<<< Results")
+
+	# If we don't get a 200 HTML response code, we didn't get a result. 
+	if( aResult.status_code != 200 ):
+		print ('>>> Failed to get a response to call for /team/team_folder/list')
+		print (aResult.text)
+		exit();
+
+	# Note the JSON response
+	teamFolders = aResult.json()
+
+	# Iterate over the Members in the JSON
+	for aTeamFolder in teamFolders['team_folders']:
+		dbxTeamFolders.append( aTeamFolder )
+		dbxTFLookup[ aTeamFolder['team_folder_id'] ] = aTeamFolder['name'] 
+		print ( aTeamFolder['team_folder_id'] + " : " + aTeamFolder['name'] )
+
+	hasMore = teamFolders['has_more']            # Note if there's another cursor call to make. 
+
+	# If it's the first run, from this point onwards the API call is the /continue version.
+	if ( loopCounter >= 0 ):
+		aURL = 'https://api.dropboxapi.com/2/team/team_folder/list/continue'
+		aData = json.dumps({'cursor': teamFolders['cursor']}) 
+		loopCounter += 1
+
+
+
 
 
 
@@ -306,7 +368,7 @@ if (aTokenTMM == ''):
 #############################################
 """
 aHeaders = {'Content-Type': 'application/json', 
-		'Authorization': 'Bearer %s' % aTokenTMM}
+		'Authorization': 'Bearer %s' % gTokenTMM}
 aURL = 'https://api.dropboxapi.com/2/team/members/list'
 aData = json.dumps({'limit': 300}) 
 
@@ -360,7 +422,8 @@ while hasMore:
 
 # How long did the APIs take?
 timestop = datetime.datetime.fromtimestamp(time.time())
-print (" We have %s Dropbox Team members in memory from %s API Calls. it took %s seconds.\n\n") % (len(dbxUsers),loopCounter,(timestop-timestart).total_seconds())
+
+print (" We have " + str(len(dbxUsers)) + " Dropbox Team members in memory from " + str(loopCounter) + " API Calls. it took " + str((timestop-timestart).total_seconds()) + " seconds.\n\n") 
 
 
 
@@ -372,12 +435,14 @@ print (" We have %s Dropbox Team members in memory from %s API Calls. it took %s
 # If yes, then go ahead
 # If not, then check if member in list to analyse
 ############################################
+summaryReport = []
+
 
 
 with open( 'Report.csv', 'wt') as csvReportSummary:
 
 	writerSummary = csv.writer(csvReportSummary, delimiter=',')
-	writerSummary.writerow(['Email Address', 'Folder Path', 'Total bytes in folder and sub-folders', 'Total bytes - Human Readable', 'Size of bytes in folder', 'No. Files in folder' , 'No. Folders in folder' ])
+	writerSummary.writerow(['Email Address', 'Folder Path', 'Path ID', 'Total bytes in folder and sub-folders', 'Total bytes - Human Readable', 'Size of bytes in folder', 'No. Files in folder' , 'No. Folders in folder' ])
 
 	aCounter = 1
 
@@ -396,14 +461,48 @@ with open( 'Report.csv', 'wt') as csvReportSummary:
 		timeStart = datetime.datetime.fromtimestamp(time.time())
 
 		aMasterFolderList = []
-		aMasterFolderList.append( getSumOfPath('', aMasterFolderList, str(aMember['profile']['team_member_id'])) )
+		aMasterFolderList.append( getSumOfPath('', '', aMasterFolderList, str(aMember['profile']['team_member_id'])) )
 		
+		# Counters for second report
+		summaryUserBytesTotal = 0
+		summaryUserTotalFiles = 0
+		summaryUserTotalFolders = 0
+
 		for item in aMasterFolderList:
-			writerSummary.writerow([aMember['profile']['email'],item.path, item.file_folder_size_in_bytes, getBytesAsGB_MB_KB(item.file_folder_size_in_bytes), item.file_size_in_bytes, item.num_files, item.num_folders])
+			writerSummary.writerow([aMember['profile']['email'],item.path, item.id, item.file_folder_size_in_bytes, getBytesAsGB_MB_KB(item.file_folder_size_in_bytes), item.file_size_in_bytes, item.num_files, item.num_folders])
 			
+			# Spin out a second report a flat summary of user account
+			summaryUserTotalFiles  += item.num_files
+			summaryUserTotalFolders += item.num_folders
+
+
+			if ( item.path.count("/") == 0):
+				summaryUserBytesTotal += item.file_folder_size_in_bytes
+
+		
+		summaryReport.append( [aMember['profile']['email'], summaryUserBytesTotal, summaryUserTotalFiles, summaryUserTotalFolders] )
+
+
 		timeStop = datetime.datetime.fromtimestamp(time.time())
 		userTimeInSeconds = (timeStop-timeStart).total_seconds()
-		print( 'User %s took %s' % (aMember['profile']['email'], printTimeInHoursMinutesSeconds( userTimeInSeconds )))
+		print( 'User %s took %s' % (aMember['profile']['email'], getTimeInHoursMinutesSeconds( userTimeInSeconds )))
+
+
+
+with open( 'ReportSummary.csv', 'wt') as csvReportSummary:
+	writerSummary = csv.writer(csvReportSummary, delimiter=',')
+	writerSummary.writerow(['Email Address', 'Total bytes', 'Total bytes - Human Readable', 'No. Files' , 'No. Folders' ])
+
+	for item in summaryReport:
+		writerSummary.writerow([item[0],item[1], getBytesAsGB_MB_KB(item[1]), item[2], item[3]])
+			
+
+with open( 'TeamFolders.csv', 'wt') as csvReportSummary:
+	writerSummary = csv.writer(csvReportSummary, delimiter=',')
+	writerSummary.writerow(['Team Folder Name', 'ID', 'Status', 'Team Shared Dropbox', 'Admin Sync Setting' ])
+
+	for item in dbxTeamFolders:
+		writerSummary.writerow([item['name'], item['team_folder_id'], item['status']['.tag'], item['is_team_shared_dropbox'], item['sync_setting']['.tag'] ])
 
 
 """
@@ -414,7 +513,5 @@ with open( 'Report.csv', 'wt') as csvReportSummary:
 """
 totalTimeStop = datetime.datetime.fromtimestamp(time.time())
 totalTimeInSeconds = (totalTimeStop-totalTimeStart).total_seconds()
-timeAsStr = printTimeInHoursMinutesSeconds( totalTimeInSeconds )
+timeAsStr = getTimeInHoursMinutesSeconds( totalTimeInSeconds )
 printmessageblock( " Script finished running, it took %s seconds." % ( timeAsStr ) )
-
-
