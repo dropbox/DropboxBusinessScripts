@@ -51,8 +51,8 @@ Pre-requisites:
 """
 Set your OAuth Tokens here
 """
-aTokenTMM = ''    	# Team Member Management    
-aTokenTMFA = ''     # Team Member File Access
+gTokenTMM = ''    	# Team Member Management    
+gTokenTMFA = ''     # Team Member File Access
 
 sourceMembersToReportOn = 'config.csv'
 
