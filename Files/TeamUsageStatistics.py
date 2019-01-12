@@ -1,3 +1,4 @@
+from __future__ import print_function
 import urllib
 import urllib2
 import json
@@ -7,8 +8,16 @@ import csv
 import time
 from collections import Counter
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 parser = argparse.ArgumentParser(description='Lists advanced aggregate file stats of the DfB team.')
 parser.add_argument('-u', '--user', dest='users', action='append', help='Target user (email address) to scan.  All team members will be returned if unspecified. You may pass multiple -u arguments.')
@@ -26,7 +35,7 @@ def getDfbMember(email):
         return json.loads(urllib2.urlopen(request).read())
     
     # Exit on error here.  Probably user not found or bad OAuth token.  Show DfB response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read());
 
 
@@ -49,7 +58,7 @@ def getDfbMembers(cursor):
         return members
     
     # Exit on error here.  Probably bad OAuth token. Show DfB response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
  
 # Get a member's info (account details, quota usage)   
@@ -61,8 +70,8 @@ def getMemberInfo(memberId):
         
     try:
         return json.loads(urllib2.urlopen(request).read())
-    except urllib2.HTTPError, error:
-        print "   DfB ERROR: "+error.read()  
+    except urllib2.HTTPError as error:
+        print("   DfB ERROR: "+error.read())  
 
 # Get all file metadata, counting files/folders/shares & noting last modification time
 def countFiles(memberEmail, memberId, csvwriter):    
@@ -125,7 +134,7 @@ def countFiles(memberEmail, memberId, csvwriter):
                            str(files["private_bytes"]), formatSize(files["private_bytes"]), str(files["private_files"]), str(files["private_folders"]), time.strftime('%Y-%m-%d %H:%M:%S', lastModTime)])
         
     except urllib2.HTTPError as error:
-        print error.read()
+        print(error.read())
         csvwriter.writerow([memberEmail, "ERROR", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"])
         sys.stderr.write("  ERROR: {}\n".format(error))
     

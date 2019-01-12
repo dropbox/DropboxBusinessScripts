@@ -7,8 +7,17 @@ import csv
 from urllib2 import Request, urlopen, HTTPError
 from multiprocessing.dummy import Pool as ThreadPool
 import sys
-reload(sys)
-sys.setdefaultencoding('UTF8')  # @UndefinedVariable
+
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 '''
 QuotaAlert.py

@@ -1,8 +1,14 @@
+from __future__ import print_function
 import urllib2
 import json
 import re
 import csv
 import argparse
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 # Look up a member id from an email address
 def getMemberId(token, email):
@@ -20,7 +26,7 @@ def grantAdmin(token, memberId):
     addRequest.add_header("Authorization", "Bearer "+token)
     addRequest.add_header("Content-type", 'application/json')
     urllib2.urlopen(addRequest);
-    print "    granted admin permissions"
+    print("    granted admin permissions")
 
 
 # Command line arguments
@@ -34,9 +40,9 @@ args = parser.parse_args()
 dfbToken = raw_input('Enter your Dropbox Business API App token (Team Member Management permission): ')
 
 if args.silent:
-    print "Starting silent provision"
+    print("Starting silent provision")
 else:
-    print "Starting provision"
+    print("Starting provision")
 
 csvreader = csv.reader(args.file)
 for row in csvreader:
@@ -55,14 +61,14 @@ for row in csvreader:
     addRequest.add_header("Content-type", 'application/json')
     
     try:
-        print "  inviting "+row[0]
+        print("  inviting "+row[0])
         profile = json.loads(urllib2.urlopen(addRequest).read())
 
         aTeamMemberID = 0
 
         # If the member has already been invited        
         if ( profile['complete'][0]['.tag'] == 'user_already_on_team'):
-            print "    user is already invited to the DfB team"
+            print("    user is already invited to the DfB team")
 
             member_id = getMemberId(token=dfbToken, email=row[0])
             aTeamMemberID = member_id
@@ -73,7 +79,7 @@ for row in csvreader:
                 welcomeRequest.add_header("Authorization", "Bearer "+dfbToken)
                 welcomeRequest.add_header("Content-type", 'application/json')
                 urllib2.urlopen(welcomeRequest).read()
-                print "    re-sent invitation"
+                print("    re-sent invitation")
                 
         else:        
             aTeamMemberID = profile['complete'][0]['profile']['team_member_id']
@@ -82,7 +88,7 @@ for row in csvreader:
         if args.admin:       
             grantAdmin(token=dfbToken, memberId=aTeamMemberID)
         
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         msg = json.loads(error.read())["error"]        
                 
         # If OAuth token is bad (401) or doesn't have member management permission (403), terminate & display script help.
@@ -90,4 +96,4 @@ for row in csvreader:
             parser.error(msg)
 
 
-print "Done"
+print("Done")

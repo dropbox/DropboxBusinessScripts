@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Deprovision users from CSV with option to change their email and let the keep their account as Dropbox Basic
 
 import urllib2
@@ -5,6 +6,11 @@ import json
 import re
 import csv
 import argparse
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 # Command line arguments
 parser = argparse.ArgumentParser(description='Removes Dropbox Business members from a CSV file.')
@@ -35,8 +41,8 @@ def setEmail(oldEmail, newEmail):
         json.loads(urllib2.urlopen(request).read())
 
     # Exit on error here.  Probably user not found or bad OAuth token.  Show response.
-    except urllib2.HTTPError, error:
-        print 'Error setting ' + oldEmail + ' to ' + newEmail + ': ' + str(error.read())
+    except urllib2.HTTPError as error:
+        print('Error setting ' + oldEmail + ' to ' + newEmail + ': ' + str(error.read()))
 
 
 # remove member, letting them keep their account (true/false), and wipe their devices (true/false)
@@ -57,23 +63,23 @@ def removeMember(email, keep):
 
     try:
         response = json.loads(urllib2.urlopen(request).read())
-        print 'Deprovisioned ' + email
+        print('Deprovisioned ' + email)
 
     # Exit on error here.  Probably user not found or bad OAuth token.  Show response.
-    except urllib2.HTTPError, error:
-        print 'Error deprovisioning ' + email + ': ' + str(error.read())
+    except urllib2.HTTPError as error:
+        print('Error deprovisioning ' + email + ': ' + str(error.read()))
 
 
 for row in csv.reader(args.file):
 
     # Check for 3 columns, make sure first column looks like an email. Terminate with script help if not.
     if len(row) < 2:
-        print "Expected 2-3 column CSV file in the format [email,keep account (true/false),new email (optional)]. " \
-              "Error in line " + str(row)
+        print("Expected 2-3 column CSV file in the format [email,keep account (true/false),new email (optional)]. " \
+              "Error in line " + str(row))
     elif not re.match("[^@]+@[^@]+\.[^@]+", row[0]):
-        print "Invalid email in line [" + str(row) + "]"
+        print("Invalid email in line [" + str(row) + "]")
     elif len(row) == 3 and len(row[2]) > 0 and not re.match("[^@]+@[^@]+\.[^@]+", row[2]):
-        print "Invalid new email in line [" + str(row) + "]"
+        print("Invalid new email in line [" + str(row) + "]")
     else:
 
         # hold onto email that needs to be removed

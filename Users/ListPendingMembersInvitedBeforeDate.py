@@ -1,3 +1,4 @@
+from __future__ import print_function
 import urllib2
 import json
 import argparse
@@ -5,8 +6,16 @@ import sys
 import time
 import datetime
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 parser = argparse.ArgumentParser(description='List pending members whom were invited prior to a specified date')
 parser.add_argument('-d', '--date', dest='date', help='List members invited prior to this date (yyyy-mm-dd format)',required=True)
@@ -38,7 +47,7 @@ def getDfbMembers(cursor):
         return members
         
     # Exit on error here.  Probably bad OAuth token. Show DfB response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 
@@ -61,7 +70,7 @@ def getInvitesBeforeDate(date, invites, cursor):
         if response["has_more"]:
             getInvitesBeforeDate(date, invites, cursor=response["cursor"])
 
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 ## To delete the pending invites, uncomment the following method & variable, and the commented section below.  Note that delete prompts for a member management API key ##
@@ -83,13 +92,13 @@ def getInvitesBeforeDate(date, invites, cursor):
 
 # find all invited members
 invitedMembers = []
-print "Getting invited members... "
+print("Getting invited members... ")
 for member in getDfbMembers(None):
     if member['profile']['status'] == 'invited':
         invitedMembers.append(member['profile'])
 
 # get all invite events before a particular date
-print "Looking up invitation times..."
+print("Looking up invitation times...")
 invites = dict()
 getInvitesBeforeDate(utcdate, invites, None)
 
@@ -103,12 +112,12 @@ for member in invitedMembers:
 # sort by invitation date ascending
 invitedBeforeDate.sort(key=lambda x: datetime.datetime.strptime(x['invited'], '%Y-%m-%d'))
 
-print "-----------------------------------------------------------------------------------"
-print "The following "+str(len(invitedBeforeDate)) +" out of "+ str(len(invitedMembers)) +" pending invitations were sent before " + str(args.date)
-print "-----------------------------------------------------------------------------------"
+print("-----------------------------------------------------------------------------------")
+print("The following "+str(len(invitedBeforeDate)) +" out of "+ str(len(invitedMembers)) +" pending invitations were sent before " + str(args.date))
+print("-----------------------------------------------------------------------------------")
 
 for d in invitedBeforeDate:
-    print d['email']+" was invited on "+invites[d['email']]['time'][0:10]
+    print(d['email']+" was invited on "+invites[d['email']]['time'][0:10])
     
     ## To delete the pending invites, uncomment the following section & the above removeMember method ##
     #confirm = raw_input('  Delete pending invite? Type "YES" to delete, or enter to continue without deleting: ')

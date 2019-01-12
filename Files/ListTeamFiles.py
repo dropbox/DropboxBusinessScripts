@@ -6,8 +6,16 @@ import sys
 import csv
 from collections import Counter
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 parser = argparse.ArgumentParser(description='Lists all files by user in the DfB team.')
 parser.add_argument('-u', '--user', dest='users', action='append', help='Target user (email address) to scan.  All team members will be returned if unspecified. You may pass multiple -u arguments.')
@@ -25,7 +33,7 @@ def getDfbMember(email):
         return json.loads(urllib2.urlopen(request).read())
     
     # Exit on error here.  Probably user not found or bad OAuth token.  Show DfB response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read());
 
 
@@ -48,7 +56,7 @@ def getDfbMembers(cursor):
         return members
     
     # Exit on error here.  Probably bad OAuth token. Show DfB response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 # List a member's dropbox 

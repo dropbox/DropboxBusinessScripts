@@ -1,3 +1,4 @@
+from __future__ import print_function
 # List shared folders + shared members as CSV format.
 #
 # Required permission:
@@ -21,8 +22,21 @@ from dropbox.team import TeamMemberInfo
 from dropbox.team import MembersGetInfoItem
 from dropbox.users import BasicAccount
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
+
+try:
+    basestring
+except NameError:
+    basestring = (str, )
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 
 class TraceEntity(object):
@@ -691,7 +705,7 @@ class AuditorCli(object):
             team.team_get_info()
             return True
         except Exception:
-            print "Please check your OAuth2 token"
+            print("Please check your OAuth2 token")
             return False
 
     def get_token(self):

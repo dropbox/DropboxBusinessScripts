@@ -6,8 +6,16 @@ import argparse
 import sys
 import csv
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 # Collect user input
 parser = argparse.ArgumentParser(description='Lists all of the apps that team members have linked.')
@@ -34,7 +42,7 @@ def get_team_member(tag, value):
         return response[0] if len(response) > 0 else None
 
     # Exit on error here.  Probably user not found or bad OAuth token.  Show Dropbox response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 
@@ -61,7 +69,7 @@ def get_team(cursor):
         return members
 
     # Exit on error here.  Probably bad OAuth token. Show Dropbox response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 
@@ -78,7 +86,7 @@ def get_member_linked_apps(email):
         return json.loads(urllib2.urlopen(request).read())['linked_api_apps']
 
     # Exit on error here.  Probably user not found or bad OAuth token.  Show Dropbox response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 
@@ -104,7 +112,7 @@ def get_team_linked_apps(cursor):
         return apps
 
     # Exit on error here.  Probably user not found or bad OAuth token.  Show Dropbox response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 

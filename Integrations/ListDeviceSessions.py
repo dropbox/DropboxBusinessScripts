@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Lists all device sessions
 
 import urllib2
@@ -7,8 +8,17 @@ import sys
 import datetime
 import csv
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
+
 csv_writer = csv.writer(sys.stdout)
 
 # Collect user input
@@ -56,7 +66,7 @@ def get_dfb_member(tag, value):
         return response[0]
 
     # Exit on error here.  Probably user not found or bad OAuth token.  Show response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 
@@ -76,7 +86,7 @@ def get_member_sessions(email):
     try:
         response = json.loads(urllib2.urlopen(request).read())
         return list_sessions(member_id, email, response, False)
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 
@@ -105,7 +115,7 @@ def get_team_sessions(cursor):
         if response["has_more"]:
             returned_sessions = returned_sessions + get_team_sessions(cursor=response["cursor"])
         return returned_sessions
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 
@@ -174,11 +184,11 @@ def deactivate_sessions(sessions):
     request.add_header("Content-type", 'application/json')
     try:
         json.loads(urllib2.urlopen(request).read())
-        print 'Deactivated ' + str(len(sessions)) + ' session(s).'
+        print('Deactivated ' + str(len(sessions)) + ' session(s).')
         csv_writer.writerow(['Platform', 'Owner', 'Session ID'])
         for s in sessions:
             csv_writer.writerow([s['.tag'], get_dfb_member('team_member_id',s['team_member_id'])['profile']['email'], s['session_id']]) 
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 csv_writer.writerow(['Platform', 'Created Date', 'Owner', 'Device', 'Session ID'])
@@ -197,5 +207,5 @@ if args.revoke:
     if raw_input("Deactivate sessions? Type 'YES' to confirm. ") == "YES":
         deactivate_sessions(sessions)
     else:
-        print "Skipping deactivation"
+        print("Skipping deactivation")
 

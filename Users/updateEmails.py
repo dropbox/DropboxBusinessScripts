@@ -1,9 +1,15 @@
+from __future__ import print_function
 import json
 import requests
 import os                             # Allows for the clearing of the Terminal Window
 import csv                            # Allows outputting to CSV file
 import time, datetime 
 import argparse
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 """
 A Script to compare the members of a Dropbox Account to a CSV file of OLD to NEW email addresses.
@@ -129,7 +135,7 @@ aHeaders = {'Content-Type': 'application/json', 'Authorization': 'Bearer %s' % a
 """
 
 if not os.path.exists(sourceFile):
-	print (">>> Can't find source file %s. Exiting script.") % sourceFile
+	print((">>> Can't find source file %s. Exiting script.") % sourceFile)
 	exit()
 
 """
@@ -153,7 +159,7 @@ with open( sourceFile, 'rb') as csvfile:
 
 timestop = datetime.datetime.fromtimestamp(time.time())
 
-print ("> We have the CSV file in memory. %s items and it took %s") % (cnt, getTimeInHoursMinutesSeconds((timestop-timestart).total_seconds()))
+print(("> We have the CSV file in memory. %s items and it took %s") % (cnt, getTimeInHoursMinutesSeconds((timestop-timestart).total_seconds())))
 # We now have an in memory copy of the file
 
 
@@ -207,7 +213,7 @@ while hasMore:
 		loopCounter += 1
 
 timestop = datetime.datetime.fromtimestamp(time.time())
-print (" We have the Dropbox users in memory from %s API Calls. it took %s") % (loopCounter,getTimeInHoursMinutesSeconds((timestop-timestart).total_seconds()))
+print((" We have the Dropbox users in memory from %s API Calls. it took %s") % (loopCounter,getTimeInHoursMinutesSeconds((timestop-timestart).total_seconds())))
 
 
 
@@ -257,23 +263,23 @@ for member in dbxUsers:
 			print ("+")
 			""" Make the API call """ 
 			if (mockRun == True):
-				print "_____MOCK RUN - NO API CALL MADE_____"
+				print("_____MOCK RUN - NO API CALL MADE_____")
 				time.sleep(0.002)
 			else:
 				aResult = requests.post(aURL, headers=aHeaders, data=aData)
 			
 			timestop = datetime.datetime.fromtimestamp(time.time())
-			print ("+++ %s seconds") % (timestop-timestart).total_seconds()
+			print(("+++ %s seconds") % (timestop-timestart).total_seconds())
 
 			# Check API ran correctly
 			if( aResult.status_code == 200 ):
 				# Add user to converted list
 				convertedUsers.append ( [ member[0], newEmailAddr]) #, member[1]
 				countConverted += 1
-				print ("Converted user from: %s   to   %s") % (member[0], newEmailAddr)
+				print(("Converted user from: %s   to   %s") % (member[0], newEmailAddr))
 			else:
 				failedToConvert.append ( [newEmailAddr, member[1]])
-				print ("Failed to convert %s due to error %s: %s") % ( newEmailAddr, aResult.status_code, aResult.text ) 
+				print(("Failed to convert %s due to error %s: %s") % ( newEmailAddr, aResult.status_code, aResult.text )) 
 
 totalStopTime = datetime.datetime.fromtimestamp(time.time())
 
@@ -293,7 +299,7 @@ for user in userList:
 
 # Print total time taken to run through and convert users
 print ("\n\n*******************************************************")
-print ("Total Time to convert: %s ") % getTimeInHoursMinutesSeconds((totalStopTime-totalStartTime).total_seconds())
+print(("Total Time to convert: %s ") % getTimeInHoursMinutesSeconds((totalStopTime-totalStartTime).total_seconds()))
 print ("*******************************************************")
 
 
@@ -302,32 +308,32 @@ print ("\nResults:")
 # Write List of Users Converted to File
 if convertedUsers != []:
 	writeToFile( 'converted.csv', convertedUsers )
-	print (" - Converted %s users") % len(convertedUsers)
+	print((" - Converted %s users") % len(convertedUsers))
 
 # Write List of Users we tried to convert but failed for some reason!
 if failedToConvert != []:
 	writeToFile( 'failedconversion.csv', failedToConvert )
-	print (" - Failed to convert %s users") % len(failedToConvert)
+	print((" - Failed to convert %s users") % len(failedToConvert))
 
 # Write List of Users Skipped to File
 if skippedExistingUsers != []:
 	writeToFile( 'filteredOut.csv', skippedExistingUsers )
-	print (" - Skipped %s users") % len(skippedExistingUsers)
+	print((" - Skipped %s users") % len(skippedExistingUsers))
 
 # Write List of Users Not Found to File
 if notFoundInSource != []:
 	writeToFile( 'notFoundInSourceFile.csv', notFoundInSource )
-	print (" - Couldn't find %s Dropbox users in source file") % len(notFoundInSource)
+	print((" - Couldn't find %s Dropbox users in source file") % len(notFoundInSource))
 
 # Write List of Users in source file but not found in Dropbox
 if sourceNotFoundInDBX != []:
 	writeToFile( 'sourceItemNotFoundInDropbox.csv', sourceNotFoundInDBX )
-	print (" - Couldn't find %s email address from Sourcefile in Drobpox.") % len(sourceNotFoundInDBX)
+	print((" - Couldn't find %s email address from Sourcefile in Drobpox.") % len(sourceNotFoundInDBX))
 
 # Write List of Users who's old email address is same as new
 if oldEqualsNew != []:
 	writeToFile( 'oldEqualsNew.csv', oldEqualsNew )
-	print (" - Skipped coverting %s users as old and new emails the same.") % len(oldEqualsNew)
+	print((" - Skipped coverting %s users as old and new emails the same.") % len(oldEqualsNew))
 
 # End of script
 

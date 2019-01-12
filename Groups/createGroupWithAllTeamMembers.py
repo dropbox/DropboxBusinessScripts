@@ -1,10 +1,16 @@
 #!/usr/bin/python
 # -*- coding: latin-1 -*-
 
+from __future__ import print_function
 import json
 import requests
 import os                             # Allows for the clearing of the Terminal Window
 
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 """
 A Script to create a group called 'Example Group', and iterate over all members of a team, adding all member to the group.

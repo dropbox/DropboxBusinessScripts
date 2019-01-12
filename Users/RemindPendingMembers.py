@@ -1,3 +1,4 @@
+from __future__ import print_function
 import urllib
 import urllib2
 import json
@@ -5,8 +6,16 @@ import argparse
 import sys
 from collections import Counter
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 parser = argparse.ArgumentParser(description='Send reminder emails to all invited (but not joined) members.')
 
@@ -33,7 +42,7 @@ def getDfbMembers(cursor):
         return members
     
     # Exit on error here.  Probably bad OAuth token. Show DfB response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 # Sends a reminder
@@ -44,17 +53,17 @@ def remind(memberId):
     request.add_header("Content-type", 'application/json')
     try:
         urllib2.urlopen(request).read()
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
  
 
 members = getDfbMembers(None)
 
-print "Reminding invited members.."
+print("Reminding invited members..")
 
 for member in members:
     if member["profile"]["status"][".tag"] == "invited":
-        print "  reminding "+member["profile"]["email"]
+        print("  reminding "+member["profile"]["email"])
         remind(member["profile"]["team_member_id"])
 
-print "Done"
+print("Done")

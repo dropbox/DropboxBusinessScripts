@@ -1,12 +1,18 @@
 #!/usr/bin/python
 # -*- coding: latin-1 -*-
 
+from __future__ import print_function
 import json
 import requests
 import pprint                         # Allows Pretty Print of JSON
 import os                             # Allows for the clearing of the Terminal Window
 import csv                            # Allows outputting to CSV file
-import time, datetime 
+import time, datetime
+
+try:
+  raw_input
+except NameError:
+  raw_input = input
 
 """
 A Script to iterate over all members of a team and extract the data they're using.
@@ -61,7 +67,7 @@ def getBytesAsGB_MB_KB( num ):
   gb = 0
   tb = 0
 
-  if ( type(num) is str ):
+  if ( isinstance(num, str) ):
     if ( '.' in num ):
       num = int(float(num))
     else:
@@ -103,9 +109,9 @@ def getTimeYMDHM():
 # Function to print Message to console in a tidy box
 #############################################
 def printmessageblock( str ):
-  print "\n*********************************************************"
-  print "* %s" % (str)
-  print "*********************************************************\n"
+  print("\n*********************************************************")
+  print("* %s" % (str))
+  print("*********************************************************\n")
   return;
 
 #############################################
@@ -228,7 +234,7 @@ while hasMore:
 		loopCounter += 1
 
 timestop = datetime.datetime.fromtimestamp(time.time())
-print (" We have the Dropbox users in memory from %s API Calls. it took %s seconds.") % (loopCounter,(timestop-timestart).total_seconds())
+print((" We have the Dropbox users in memory from %s API Calls. it took %s seconds.") % (loopCounter,(timestop-timestart).total_seconds()))
 
 
 

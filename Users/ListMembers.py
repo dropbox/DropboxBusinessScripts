@@ -4,8 +4,16 @@ import argparse
 import csv
 import sys
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 parser = argparse.ArgumentParser(description='Lists members on a Dropbox for Business Team')
 parser.add_argument( '-q', '--quota', action='store_const', const=True, default=False, dest='quota',
@@ -38,7 +46,7 @@ def getDfbMembers(cursor):
         return members
     
     # Exit on error here.  Probably bad OAuth token. Show DfB response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
  
 # Get a member's info (account details, quota usage)   
@@ -50,7 +58,7 @@ def getMemberInfo(memberId):
         
     try:
         return json.loads(urllib2.urlopen(request).read())
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 # Get a dict of groupid - group name
@@ -64,7 +72,7 @@ def getGroups():
         for group in json.loads(urllib2.urlopen(request).read())["groups"]:
             ret[group["group_id"]] = group["group_name"]
         return ret
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 # Get the count of shared links for the member

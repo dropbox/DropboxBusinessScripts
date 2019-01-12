@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: latin-1 -*-
 
+from __future__ import print_function
 import json
 import requests
 import pprint                         # Allows Pretty Print of JSON
@@ -9,8 +10,16 @@ import csv                            # Allows outputting to CSV file
 import time, datetime
 import sys
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 
 """
@@ -139,7 +148,7 @@ def getBytesAsGB_MB_KB( num ):
   gb = 0
   tb = 0
 
-  if ( type(num) is str ):
+  if ( isinstance(num, str) ):
     if ( '.' in num ):
       num = int(float(num))
     else:
@@ -200,9 +209,9 @@ class PathSummary:
 # Function to print Message to console in a tidy box
 #############################################
 def printmessageblock( str ):
-  print "\n*********************************************************"
-  print "* %s" % (str)
-  print "*********************************************************\n"
+  print("\n*********************************************************")
+  print("* %s" % (str))
+  print("*********************************************************\n")
   return;
 
 #############################################
@@ -406,7 +415,7 @@ with open( gListOfMembersToReportOn, 'rb') as csvfileRead:
 	if ( len(gUsersToAnalyze) <= 0 ):
 
 		# Check that we have users
-		printmessageblock("We could not find any users in config file '%s' to work on. Ending script." % aListOfMembersToReportOn)
+		printmessageblock("We could not find any users in config file '%s' to work on. Ending script." % gListOfMembersToReportOn)
 		print ( "Stopping: %s" % getPrettyTime() )
 		exit();
 

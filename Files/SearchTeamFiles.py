@@ -1,3 +1,4 @@
+from __future__ import print_function
 import urllib
 import urllib2
 import json
@@ -6,8 +7,16 @@ import sys
 import csv
 from collections import Counter
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 parser = argparse.ArgumentParser(description='Search for files in the DfB team.')
 parser.add_argument('query', help='Search Query.')
@@ -27,7 +36,7 @@ def getDfbMember(email):
         return json.loads(urllib2.urlopen(request).read())
     
     # Exit on error here.  Probably user not found or bad OAuth token.  Show DfB response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         print ( "ERROR: " + error.read() )
         parser.error(error.read())
 
@@ -51,7 +60,7 @@ def getDfbMembers(cursor):
         return members
     
     # Exit on error here.  Probably bad OAuth token. Show DfB response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 # Searches a member's dropbox, paging through the results if necessary

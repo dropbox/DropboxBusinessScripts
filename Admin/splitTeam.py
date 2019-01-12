@@ -1,3 +1,4 @@
+from __future__ import print_function
 import json
 import requests
 import pprint                         # Allows Pretty Print of JSON
@@ -6,8 +7,16 @@ import csv                            # Allows outputting to CSV file
 import time, datetime
 import sys
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
+
+try:
+  raw_input
+except NameError:
+  raw_input = input
 
 """
 ********************************************************************************************************************
@@ -87,9 +96,9 @@ def getTimeInHoursMinutesSeconds( sec ):
 # Function to print Message to console in a tidy box
 #############################################
 def printmessageblock( str ):
-  print "\n*********************************************************"
-  print "* %s" % (str)
-  print "*********************************************************\n"
+  print("\n*********************************************************")
+  print("* %s" % (str))
+  print("*********************************************************\n")
   return;
 
 #############################################

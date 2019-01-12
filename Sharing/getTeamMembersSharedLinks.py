@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: latin-1 -*-
 
+from __future__ import print_function
 import json
 import requests
 import os                             # Allows for the clearing of the Terminal Window

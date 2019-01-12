@@ -1,9 +1,15 @@
+from __future__ import print_function
 import json
 import requests
 import pprint                         # Allows Pretty Print of JSON
 import os                             # Allows for the clearing of the Terminal Window
 import csv                            # Allows outputting to CSV file
 import time, datetime 
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 """
 ********************************************************************************************************************
@@ -52,9 +58,9 @@ def getTimeYMD():
 # Function to print Message to console in a tidy box
 #############################################
 def printmessageblock( str ):
-  print "\n*********************************************************"
-  print "* %s" % (str)
-  print "*********************************************************\n"
+  print("\n*********************************************************")
+  print("* %s" % (str))
+  print("*********************************************************\n")
   return;
 
 #############################################
@@ -178,7 +184,7 @@ with open( fileName, 'wb') as csvfile:
 		# Increment the loop coun
 	# End of while hasMore:
 
-print '\n\nTotal Members found: %s' % totalMembers
+print('\n\nTotal Members found: %s' % totalMembers)
 
 """
 #############################################

@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: latin-1 -*-
 
+from __future__ import print_function
 import json
 import requests
 import pprint                         # Allows Pretty Print of JSON
@@ -9,6 +10,11 @@ import csv                            # Allows outputting to CSV file
 import time, datetime
 
 from Classes import SharedFolder      # Object to represent a single shared folder, and all it's sharing.
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 """
 

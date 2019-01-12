@@ -4,8 +4,16 @@ import argparse
 import sys
 import csv
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 parser = argparse.ArgumentParser(description='Lists all folders and folder permissions for groups in a DB or DE team.')
 parser.add_argument('-g', '--group', dest='groups', action='append', help='Target group name to scan. All groups will '
@@ -25,7 +33,7 @@ def get_groups():
         response = json.loads(urllib2.urlopen(request).read())
         return response["groups"]
     # Exit on error here.  Probably bad OAuth token. Show DfB response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 
@@ -38,7 +46,7 @@ def get_first_group_member(group_id):
     try:
         response = json.loads(urllib2.urlopen(request).read())
         return response["groups"][0]["members"][0]["profile"]["member_id"]
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 

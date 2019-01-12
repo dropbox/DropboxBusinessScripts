@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Lists external shared users
 
 import urllib2
@@ -7,8 +8,16 @@ import sys
 import re
 import threading
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 # Collect user input
 parser = argparse.ArgumentParser(description='Identifies externally shared users')
@@ -40,7 +49,7 @@ def get_team_members(cursor):
         return members
 
     # Exit on error here.  Probably bad OAuth token. Show Dropbox response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 
@@ -75,7 +84,7 @@ def get_shared_users(team_member_id, users, folders, domains):
                         users[user_email] = domain
 
     # Exit on error here.  Probably bad OAuth token. Show DfB response.
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         parser.error(error.read())
 
 
@@ -87,7 +96,7 @@ def worker(team_subset, users, folders, domains):
         if m['profile']['status'] == 'active':
             get_shared_users(m['profile']['member_id'], users, folders, domains)
 
-print 'Getting all team members...'
+print('Getting all team members...')
 
 # all members of a Dropbox team
 team_members = get_team_members(None)
@@ -101,7 +110,7 @@ if args.domains:
     for d in args.domains:
         domains.append(str(d).lower())
 
-print 'Finding externally shared users at ' + ('all domains' if len(domains) == 0 else str(', '.join(domains))) + '...'
+print('Finding externally shared users at ' + ('all domains' if len(domains) == 0 else str(', '.join(domains))) + '...')
 
 # batches of team members to distribute in about 100 threads
 batch_size = 1 if len(team_members) < 100 else len(team_members) / 100
@@ -125,4 +134,4 @@ for t in threads:
 
 # sort by domain, then by user
 for u in sorted(shared_users.items(), key=lambda x: (x[1], x[0])):
-    print u[0]
+    print(u[0])

@@ -1,11 +1,17 @@
 #!/usr/bin/python
 
+from __future__ import print_function
 import requests
 import requests.exceptions
 import json
 import ast
 import sys
 import os
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 """
 A script to intake and set all team-members to a specified member space-limitation in GB. 
@@ -25,20 +31,23 @@ Uses the following API calls:
 	- https://api.dropboxapi.com/2/team/member_space_limits/set_custom_quota
 """
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)
+    sys.setdefaultencoding('UTF8')
+except NameError:
+    pass  # Python 3 already defaults to utf-8
 
 dfbToken = raw_input('Enter your Dropbox Business API App token (Team Member File Access permission): ')
 setLimit = raw_input('Set your preferred Space Limitation (Minimum is 25GB): ')
 
 if int(setLimit) < 25:
-	print 'Cannot set limit to less than 25GB'
+	print('Cannot set limit to less than 25GB')
 	sys.exit()
 
 
 # ----------- get members ------------ #
 def getDfbMembers():
-	print 'Working.......................'
+	print('Working.......................')
 	data = {'limit': 1000, 'include_removed': False}
 	HEADERS = {}
 	HEADERS['Authorization'] = 'Bearer ' +dfbToken
@@ -52,7 +61,7 @@ def getDfbMembers():
 		data = {'cursor': cursor}
 		batchCheckQuota(formatMembers(members))
 		while more:
-			print 'Has more, still working.......................'
+			print('Has more, still working.......................')
 			r_continue = requests.post('https://api.dropboxapi.com/2/team/members/list/continue',json = data, headers = HEADERS)
 			r_continue.raise_for_status()
 			resp_continue = json.loads(r_continue.text)
@@ -108,6 +117,6 @@ def setQuotas(membersDict):
 	r = requests.post('https://api.dropboxapi.com/2/team/member_space_limits/set_custom_quota',json = data, headers = HEADERS)
 	resp = json.loads(r.text)
 	for item in resp:
-		print 'changed: ' + item['user']['email'] + ' to ' + str(item['quota_gb']) + 'GB'
+		print('changed: ' + item['user']['email'] + ' to ' + str(item['quota_gb']) + 'GB')
 
 getDfbMembers()

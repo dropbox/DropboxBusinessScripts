@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: latin-1 -*-
 
+from __future__ import print_function
 import json
 import requests
 import pprint                         # Allows Pretty Print of JSON
@@ -12,6 +13,11 @@ import sys
 
 #reload(sys)
 #sys.setdefaultencoding('UTF8')
+
+try:
+    raw_input
+except NameError:
+    raw_input = input
 
 """
 A Script to iterate over all members of a team, for each member pull out a list of their folders and 
@@ -186,7 +192,7 @@ def getBytesAsGB_MB_KB( num ):
   gb = 0
   tb = 0
 
-  if ( type(num) is str ):
+  if ( isinstance(num, str) ):
     if ( '.' in num ):
       num = int(float(num))
     else:

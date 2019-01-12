@@ -1,3 +1,8 @@
+from __future__ import print_function
+
+import json
+import requests
+
 def create_shared_folder(token, creator, path):
 	url = 'https://api.dropboxapi.com/1/shared_folders/'
 	headers = {'Authorization': 'Bearer %s' % token, 'X-Dropbox-Perform-As-Team-Member': creator}
@@ -8,7 +13,7 @@ def create_shared_folder(token, creator, path):
 	if r.status_code == 200:
 		return r.json()['shared_folder_id']
 	else:
-		print 'HTTP error %s (%s - %s)' % (r.status_code, r.reason, r.text)
+		print('HTTP error %s (%s - %s)' % (r.status_code, r.reason, r.text))
 		return False
 
 def invite_to_shared_folder(token, inviter, invitee, invitee_role, folder_id):
@@ -22,7 +27,7 @@ def invite_to_shared_folder(token, inviter, invitee, invitee_role, folder_id):
 	if r.status_code == 200:
 		return r.json()['invitations'][0]['invite_id']
 	else:
-		print 'HTTP error %s (%s - %s)' % (r.status_code, r.reason, r.text)
+		print('HTTP error %s (%s - %s)' % (r.status_code, r.reason, r.text))
 		return False
 
 def accept_invitation(token, invitee, invitation):
@@ -35,7 +40,7 @@ def accept_invitation(token, invitee, invitation):
 	if r.status_code == 200:
 		return True
 	else:
-		print 'HTTP error %s (%s - %s)' % (r.status_code, r.reason, r.text)
+		print('HTTP error %s (%s - %s)' % (r.status_code, r.reason, r.text))
 		return False	
 
 def unshare_folder(token, owner, folder):
@@ -48,7 +53,7 @@ def unshare_folder(token, owner, folder):
 	if r.status_code == 200:
 		return True
 	else:
-		print 'HTTP error %s (%s - %s)' % (r.status_code, r.reason, r.text)
+		print('HTTP error %s (%s - %s)' % (r.status_code, r.reason, r.text))
 		return False
 
 def get_member_ids(token):
@@ -64,7 +69,7 @@ def get_member_ids(token):
 		for i in profiles:
 			members.append([i['profile']['email'], i['profile']['member_id']])
 	else:
-		print 'HTTP error %s (%s - %s)' % (r.status_code, r.reason, r.text)
+		print('HTTP error %s (%s - %s)' % (r.status_code, r.reason, r.text))
 
 	return members
 
