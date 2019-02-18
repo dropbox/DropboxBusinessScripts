@@ -163,7 +163,7 @@ if (not bHaveCSV):
 
 if ( not bAnalyzeAll ):
 	# Open file of users to analyze
-	with open( sourceMembersToReportOn, 'rb') as csvfileRead:
+	with open( sourceMembersToReportOn, 'r') as csvfileRead:
 		# Open file to read from
 		reader = csv.reader(csvfileRead)
 
