@@ -498,3 +498,5 @@ totalTimeStop = datetime.datetime.fromtimestamp(time.time())
 totalTimeInSeconds = (totalTimeStop-totalTimeStart).total_seconds()
 timeAsStr = getTimeInHoursMinutesSeconds( totalTimeInSeconds )
 printmessageblock( " Script finished running, it took %s seconds." % ( timeAsStr ) )
+
+
