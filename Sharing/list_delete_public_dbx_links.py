@@ -8,9 +8,10 @@ def getmembers():
 
     # if team is > 1000, also use members/list/continue
     members = dbxt.team_members_list().members
-    memberids = [member.profile.team_member_id for member in members]
-    
-    return memberids
+    membersinfo = [(member.profile.team_member_id, member.profile.email)
+                   for member in members]
+
+    return membersinfo
 
 def getlinks(userid):
     '''get all public links for an individual member'''
@@ -37,10 +38,10 @@ def delall():
 def listlinks():
     '''print all public links urls for all members'''
 
-    for user in getmembers():
-        links = getlinks(user)
+    for (id, email) in getmembers():
+        links = getlinks(id)
         link_count = len(links)
-        print("%s has the following number of public links: %s" % (user, link_count))
+        print("Public Links: %s User: %s" % (link_count, email))
         for link in links:
             print("    %s" % link.url)
 
