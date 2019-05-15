@@ -32,14 +32,14 @@ def dellinks(userid):
 def delall():
     '''delete all public links for all members'''
 
-    for user in getmembers():
-        dellinks(user)
+    for (memberid, email) in getmembers():
+        dellinks(memberid)
 
 def listlinks():
     '''print all public links urls for all members'''
 
-    for (id, email) in getmembers():
-        links = getlinks(id)
+    for (memberid, email) in getmembers():
+        links = getlinks(memberid)
         link_count = len(links)
         print("Public Links: %s User: %s" % (link_count, email))
         for link in links:
