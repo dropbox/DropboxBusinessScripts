@@ -5,6 +5,7 @@ import time
 import smtplib
 import requests
 
+#requires Dropbox Business API token with 'Team Auditing' permission
 token = "<enter token here>"
 cursor = None
 
@@ -24,6 +25,7 @@ alerts = ["sign_in_as_session_start",
           ]
 
 # If using gmail, "enable less secure apps" needs to be turned on.
+# https://myaccount.google.com/security -> "Enable less secure apps"
 # For a more robust solution, use an email API tool e.g. Mailgun
 sender_email = "<sender_email@gmail.com>"
 sender_pw = "<sender_password"
