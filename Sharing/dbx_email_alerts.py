@@ -14,7 +14,7 @@ dbxt = dropbox.DropboxTeam(token)
 
 # Full list of alerts available at:
 # https://www.dropbox.com/developers/documentation/http/teams#team_log-get_events
-alerts = ["sign_in_as_session_start",
+alerts = {"sign_in_as_session_start",
           "member_change_admin_role",
           "shared_link_create",
           # "login_fail",
@@ -22,7 +22,7 @@ alerts = ["sign_in_as_session_start",
           # "file_request_create",
           # "account_capture_relinquish_account",
           # "shared_content_copy"
-          ]
+         }
 
 # If using gmail, "enable less secure apps" needs to be turned on.
 # https://myaccount.google.com/security -> "Enable less secure apps"
