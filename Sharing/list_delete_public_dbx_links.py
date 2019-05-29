@@ -22,18 +22,18 @@ def getlinks(userid):
 
     return linkurls
 
-def dellinks(userid):
-    '''delete all public links for an individual member'''
+# def dellinks(userid):
+#     '''delete all public links for an individual member'''
 
-    for link in getlinks(userid):
-        dbxt.as_user(userid).sharing_revoke_shared_link(link.url)
-        print("     %s has been deleted " % link.url)
+#     for link in getlinks(userid):
+#         dbxt.as_user(userid).sharing_revoke_shared_link(link.url)
+#         print("     %s has been deleted " % link.url)
 
-def delall():
-    '''delete all public links for all members'''
+# def delall():
+#     '''delete all public links for all members'''
 
-    for (memberid, email) in getmembers():
-        dellinks(memberid)
+#     for (memberid, email) in getmembers():
+#         dellinks(memberid)
 
 def listlinks():
     '''print all public links urls for all members'''
@@ -55,8 +55,10 @@ if __name__ == '__main__':
     if mode == "list":
         listlinks()
 
-    elif mode == "delete":
-        delall()
+    ## CAUTION: Enabling this mode will allow deletion of unprotected shared links
+    ## This could result in disruption to your team
+    # elif mode == "delete":
+    #     delall()
 
     else:
         print("Please enter a mode of list or delete")
