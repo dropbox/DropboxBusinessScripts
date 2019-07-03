@@ -1,6 +1,5 @@
 import json
 import requests
-import pprint                         # Allows Pretty Print of JSON
 import os                             # Allows for the clearing of the Terminal Window
 import csv                            # Allows outputting to CSV file
 import time, datetime 
@@ -24,6 +23,14 @@ The outputted CSV will have the
 'Email verified', 
 'Joined on'
 
+Requirements:
+  Script tested on Python 3.6.5
+
+  One Dropbox API Token is needed, inserted just below this comments section.
+  * Team Member Management
+
+Pre-requisites:
+* Scripts requires library 'Requests' - You can install using "pip install requests"
 
 ********************************************************************************************************************
 """
@@ -33,7 +40,8 @@ The outputted CSV will have the
 """
 Set your OAuth Token here with 'Team Member Management' permissions
 """
-aTokenTMM = ''       # TMM Token
+
+aTokenTMM = '' # Team Member Management 
 
 """
 ********************************************************************************************************************
@@ -52,23 +60,16 @@ def getTimeYMD():
 # Function to print Message to console in a tidy box
 #############################################
 def printmessageblock( str ):
-  print "\n*********************************************************"
-  print "* %s" % (str)
-  print "*********************************************************\n"
+  print ("\n*********************************************************")
+  print ("* %s" % (str))
+  print ("*********************************************************\n")
   return;
 
 #############################################
 # Function to print Message to console in a tidy box
 #############################################
-def printTimeInHoursMinutesSeconds( sec ):
-    sec = int(sec)
-    hrs = sec / 3600
-    sec -= 3600*hrs
-
-    mins = sec / 60
-    sec -= 60*mins
-
-    return '%s hrs, %s mins, %s sec' % ( hrs, mins, sec);
+def getTimeInHoursMinutesSeconds( sec ):
+    return time.strftime("%H hrs %M mins %S sec", time.gmtime(sec))
 
 
 
@@ -124,7 +125,7 @@ hasMore = True;
 loopCounter = 0;
 totalMembers = 0
 
-with open( fileName, 'wb') as csvfile:
+with open( fileName, 'w') as csvfile:
 	writer = csv.writer(csvfile, delimiter=',')
 	# Write the Column Headers
 	writer.writerow(['First name','Last name','Email address', 'Account status', 'Role', 'Team member ID', 'External ID', 'Email verified', 'Joined on'])
@@ -145,29 +146,27 @@ with open( fileName, 'wb') as csvfile:
 		members = aResult.json()
 		totalMembers += len(members['members'])     # Keep a count of total members ( this will be verfied and unverfied accounts )
 
-		#pprint.pprint (members)
-
 		# Iterate over the Members in the JSON
 		for aMember in members['members']:
 
 			externalID = ""
 			if( 'external_id' in aMember['profile'] ):
-				externalID = aMember['profile']['external_id'].encode('utf-8').strip()
+				externalID = aMember['profile']['external_id'].strip()
 
 			joinedOnDay = ""
 			if( 'joined_on' in aMember['profile'] ):
-				joinedOnDay = aMember['profile']['joined_on'].encode('utf-8').strip()
+				joinedOnDay = aMember['profile']['joined_on'].strip()
 
-			writer.writerow([aMember['profile']['name']['given_name'].encode('utf-8').strip(), 
-				aMember['profile']['name']['surname'].encode('utf-8').strip(), 
-				aMember['profile']['email'].encode('utf-8').strip(), 
-				aMember['profile']['status']['.tag'].encode('utf-8').strip(),
-				aMember['role']['.tag'].encode('utf-8').strip(),
-				aMember['profile']['team_member_id'].encode('utf-8').strip(),
+			writer.writerow([aMember['profile']['name']['given_name'].strip(), 
+				aMember['profile']['name']['surname'].strip(), 
+				aMember['profile']['email'].strip(), 
+				aMember['profile']['status']['.tag'].strip(),
+				aMember['role']['.tag'].strip(),
+				aMember['profile']['team_member_id'].strip(),
 				externalID,
 				aMember['profile']['email_verified'], 
 				joinedOnDay])
-			
+						
 			hasMore = members['has_more']                                                     # Note if there's another cursor call to make. 
 
 		# If it's the first run, from this point onwards the API call is the /continue version.
@@ -178,7 +177,7 @@ with open( fileName, 'wb') as csvfile:
 		# Increment the loop coun
 	# End of while hasMore:
 
-print '\n\nTotal Members found: %s' % totalMembers
+print ('\n\nTotal Members found: %s' % totalMembers)
 
 """
 #############################################
@@ -188,5 +187,5 @@ print '\n\nTotal Members found: %s' % totalMembers
 """
 totalTimeStop = datetime.datetime.fromtimestamp(time.time())
 totalTimeInSeconds = (totalTimeStop-totalTimeStart).total_seconds()
-timeAsStr = printTimeInHoursMinutesSeconds( totalTimeInSeconds )
+timeAsStr = getTimeInHoursMinutesSeconds( totalTimeInSeconds )
 printmessageblock( " Script finished running, it took %s seconds." % ( timeAsStr ) )
