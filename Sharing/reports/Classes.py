@@ -94,10 +94,10 @@ class SharedFolder:
 		row.append( self.folder_name ) #'Folder Name'
 		row.append( self.getPathLower() ) #'Folder Path'
 		row.append( self.share_folder_id ) #'Share Folder ID'
-		row.append( '' ) #'Folder Mount Status'
 		row.append( self.team_member_email ) #'User Email'
 		row.append( self.folder_permission ) #'User Access Type'
 		row.append( str(False) ) #'User on Team'
+		row.append( '' ) #'Folder Mount Status'
 		row.append( '' ) #'Group Name'
 		row.append( '' ) #'Group Members'
 		row.append( '' ) #'Group Permission'
@@ -105,6 +105,8 @@ class SharedFolder:
 		row.append( str(False) ) # 'Team owned folder'
 
 		return row
+
+
 
 
 	def getOwnerOwnedFolderRows(self):
@@ -116,16 +118,20 @@ class SharedFolder:
 		for grp in self.groups:
 			row = []
 
+			writer.writerow(['Owner email', 'Owner Name','Folder Name', 'Folder Path', 'Folder ID', 'Collaborator Email', 'Collaborator Permissions', 
+		'Collaborator on Team', 'Folder Mount Status', 'Group Name', 'Group Members', 'Group Permissions', 'Group Type',
+		'Team Owned Folder' ])
+
 
 			row.append( self.team_member_email ) #'Owner email'
 			row.append( self.team_member_name ) #'Owner Name',
 			row.append( self.folder_name ) #'Name'
 			row.append( self.getPathLower() ) #'Folder Path'
 			row.append( self.share_folder_id ) # 'Share Folder ID'
-			row.append( self.mount_status ) #'Folder Mount Status'
 			row.append( '' ) # Collaborator Email
 			row.append( '' ) # Collaborator Permissions
 			row.append( '' ) # Collaborator on Team
+			row.append( self.mount_status ) #'Folder Mount Status'
 			row.append( grp.group_name ) #'Group Name'
 			row.append( str(grp.group_members) ) #'Group Members'
 			row.append( grp.group_permission ) #'Group Permission'
@@ -143,10 +149,10 @@ class SharedFolder:
 			row.append( self.folder_name ) #'Name'
 			row.append( self.getPathLower() ) #'Folder Path'
 			row.append( self.share_folder_id ) #'Share Folder ID'
-			row.append( self.mount_status ) #'Folder Mount Status'
 			row.append( aUser.user_email ) #'User Email'
 			row.append( aUser.user_access_type ) #'User Access Type'
 			row.append( str(aUser.user_on_team) ) #'User on Team'
+			row.append( self.mount_status ) #'Folder Mount Status'
 			row.append( '' ) #'Group Name'
 			row.append( '' ) #'Group Members'
 			row.append( '' ) #'Group Permission'
@@ -173,9 +179,3 @@ class SharedFolder:
 				return True
 
 		return False
-
-
-
-
-
-
