@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -*-
 
 import json
 import requests
@@ -16,17 +16,13 @@ import sys
 """
 A Script to iterate over all members of a team, for each member pull out a list of their folders and 
 Files and give a summary of the size of data, number of files / folders. 
-
 Note: Report shows folders the user has mounted ( added to their Dropbox account ) and does not differentiate
       between owner and collaborated on folders. 
-
 You can optionally provide a CSV file 'config.csv' listing out on separate rows the email addresses of 
 members of the team to analyze.
 If you do not provide a list, or the list is empty, it will attempt to analyze ALL members.
 As this could be a VERY slow process you are prompted to confirm your choice under this circumstance.      
-
 Outputted file is 'report.csv'
-
 It has the following column headers:
   Email Address: Team membmers email address
   Folder Path: Path of folder. Blank value is root folder. 
@@ -35,17 +31,13 @@ It has the following column headers:
   Size of bytes in folder: Total of bytes for files in this folder. Excludes sub-folders and their content. 
   No. Files in folder: Number of files in this folder. Excludes sub-folders and their content. 
   No. Folders in folder: Number of folders in this folder. Excludes sub-folders and their content. 
-
 Requirements:
   Script tested on Python 3.6.5
-
   Two Dropbox API Tokens needed needed inserted just below this comments section.
   * Team Member File Access
   * Team Member Management
-
 Pre-requisites:
 * Scripts requires library 'Requests' - You can install using "pip install requests"
-
 """
 
 """
@@ -53,6 +45,7 @@ Set your OAuth Tokens here
 """
 gTokenTMM = ''    	# Team Member Management    
 gTokenTMFA = ''     # Team Member File Access
+
 
 sourceMembersToReportOn = 'config.csv'
 
@@ -245,7 +238,7 @@ bHaveCSV = os.path.isfile( sourceMembersToReportOn )
 if (not bHaveCSV):
 	print('We could not find a file listing users to report on. ')
 	print('Would you like to analyze ALL users on the team. Note this could be a very slow process.') 
-	lsAnswer = input("Type 'y' to process ALL or 'n' to cancel this script: ")
+	lsAnswer = raw_input("Type 'y' to process ALL or 'n' to cancel this script: ")
 
 	if ( lsAnswer == 'y' or lsAnswer == 'Y'):
 		bAnalyzeAll = True
@@ -468,7 +461,7 @@ with open( 'Report.csv', 'wt') as csvReportSummary:
 		summaryUserTotalFolders = 0
 
 		for item in aMasterFolderList:
-			writerSummary.writerow([aMember['profile']['email'],item.path, item.id, item.file_folder_size_in_bytes, getBytesAsGB_MB_KB(item.file_folder_size_in_bytes), item.file_size_in_bytes, item.num_files, item.num_folders])
+			writerSummary.writerow([aMember['profile']['email'],item.path.encode('utf-8'), item.id, item.file_folder_size_in_bytes, getBytesAsGB_MB_KB(item.file_folder_size_in_bytes), item.file_size_in_bytes, item.num_files, item.num_folders])
 			
 			# Spin out a second report a flat summary of user account
 			summaryUserTotalFiles  += item.num_files
