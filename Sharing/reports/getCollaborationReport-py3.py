@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: latin-1 -*-
+# -*- ccoding: utf-8 -*-
 
 import json
 import requests
@@ -7,13 +7,12 @@ import pprint                         # Allows Pretty Print of JSON
 import os                             # Allows for the clearing of the Terminal Window
 import csv                            # Allows outputting to CSV file
 import time, datetime
+import logging
 
 from Classes import SharedFolder      # Object to represent a single shared folder, and all it's sharing.
 
 """
-
 Written using python 3.6+
-
 BE WARNED:
 * Use with discression. 
 * Not testing in anger so accuracy of reporting TBC.
@@ -52,6 +51,7 @@ DO NOT EDIT BELOW THIS POINT
 fileName = 'collaboration.csv'
 totalTimeStart = datetime.datetime.fromtimestamp(time.time())
 
+logging.basicConfig(filename='output.log',level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 #############################################
 # Function to return current Timestamp 
@@ -228,6 +228,7 @@ while hasMore:
 	# If we don't get a 200 HTML response code, we didn't get a result. 
 	if( aResult.status_code != 200 ):
 		print ('>>> Failed to get a response to call for /team/members/list')
+		logging.info( aResult.text ) 
 		print (aResult.text)
 		exit();
 
@@ -249,8 +250,9 @@ while hasMore:
 
 # How long did the APIs take?
 timestop = datetime.datetime.fromtimestamp(time.time())
-print (" We have the Dropbox users in memory from " + str(loopCounter) + " API Calls. it took " + str((timestop-timestart).total_seconds()) + " seconds.")
-
+strMessage = "We have the Dropbox users in memory from " + str(loopCounter) + " API Calls. it took " + str((timestop-timestart).total_seconds()) + " seconds."
+print ( strMessage )
+logging.info( strMessage )
 
 """
 #############################################
@@ -342,9 +344,9 @@ with open( newFileName, 'wt') as csvfile:
 	    			path_lower = None
 
 	    		mySharedFolder.is_team_folder = True if (userFolder['is_team_folder'] == 'true' ) else False
-	    		mySharedFolder.path_lower = path_lower
+	    		mySharedFolder.path_lower = path_lower.encode('utf-8') if ( path_lower is not None) else path_lower
 	    		mySharedFolder.share_folder_id = userFolder['shared_folder_id']   # Preview URL
-	    		mySharedFolder.folder_name = userFolder['name']                   # Folder Name
+	    		mySharedFolder.folder_name = userFolder['name'].encode('utf-8')                  # Folder Name
 
 	    		if ( path_lower == None ):
 	    			mySharedFolder.mount_status = 'UNMOUNTED' # It's an UNMOUNTED folder if path_lower is empty
@@ -353,6 +355,8 @@ with open( newFileName, 'wt') as csvfile:
 
 	    		mySharedFolder.preview_url = userFolder['preview_url'] # Preview URL
 	    		mySharedFolder.folder_permission = userFolder['access_type']['.tag']                                         ### So we know if user owns the folder!!!
+
+	    		logging.info( "team_member_id: " + str(mySharedFolder.team_member_id) + ", shared_folder_id: " + str(mySharedFolder.share_folder_id) + ", path: " + str(mySharedFolder.path_lower) )
 
 
 	    		#############################################
@@ -498,5 +502,3 @@ totalTimeStop = datetime.datetime.fromtimestamp(time.time())
 totalTimeInSeconds = (totalTimeStop-totalTimeStart).total_seconds()
 timeAsStr = getTimeInHoursMinutesSeconds( totalTimeInSeconds )
 printmessageblock( " Script finished running, it took %s seconds." % ( timeAsStr ) )
-
-
