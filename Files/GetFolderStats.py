@@ -8,21 +8,23 @@ import os                             # Allows for the clearing of the Terminal 
 import csv                            # Allows outputting to CSV file
 import time, datetime
 import sys
+import logging
 
-
-#reload(sys)
-#sys.setdefaultencoding('UTF8')
 
 """
 A Script to iterate over all members of a team, for each member pull out a list of their folders and 
 Files and give a summary of the size of data, number of files / folders. 
+
 Note: Report shows folders the user has mounted ( added to their Dropbox account ) and does not differentiate
       between owner and collaborated on folders. 
+
 You can optionally provide a CSV file 'config.csv' listing out on separate rows the email addresses of 
 members of the team to analyze.
 If you do not provide a list, or the list is empty, it will attempt to analyze ALL members.
 As this could be a VERY slow process you are prompted to confirm your choice under this circumstance.      
+
 Outputted file is 'report.csv'
+
 It has the following column headers:
   Email Address: Team membmers email address
   Folder Path: Path of folder. Blank value is root folder. 
@@ -31,20 +33,25 @@ It has the following column headers:
   Size of bytes in folder: Total of bytes for files in this folder. Excludes sub-folders and their content. 
   No. Files in folder: Number of files in this folder. Excludes sub-folders and their content. 
   No. Folders in folder: Number of folders in this folder. Excludes sub-folders and their content. 
+
 Requirements:
   Script tested on Python 3.6.5
+
   Two Dropbox API Tokens needed needed inserted just below this comments section.
   * Team Member File Access
   * Team Member Management
+
 Pre-requisites:
 * Scripts requires library 'Requests' - You can install using "pip install requests"
+
 """
 
 """
 Set your OAuth Tokens here
 """
-gTokenTMM = ''    	# Team Member Management    
+gTokenTMM =  ''    	# Team Member Management    
 gTokenTMFA = ''     # Team Member File Access
+
 
 
 sourceMembersToReportOn = 'config.csv'
@@ -59,6 +66,9 @@ DO NOT EDIT BELOW THIS POINT
 
 totalTimeStart = datetime.datetime.fromtimestamp(time.time())
 
+gListOfPaths = []
+
+logging.basicConfig(filename='output.log',level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 #############################################
 # Function to return current Timestamp 
@@ -99,7 +109,11 @@ def getTimeInHoursMinutesSeconds( sec ):
 # Recursive Function to take a path and analyse
 # it and it's child folders
 #############################################
-def getSumOfPath(aPath, aPathID, aMasterFolderList, team_member_id):
+def getSumOfPath(aPath, aPathID, aMasterFolderList, team_member_id, email_address):
+
+	global gListOfPaths
+
+	logging.info ( 'Checking path: ' + aPath)
 
 	aURL = 'https://api.dropboxapi.com/2/files/list_folder'
 	aData = json.dumps({'path': aPath,
@@ -129,10 +143,13 @@ def getSumOfPath(aPath, aPathID, aMasterFolderList, team_member_id):
 		# If we don't get a 200 HTML response code, we didn't get a result. 
 		if( aResult.status_code != 200 ):
 	 		printmessageblock ('* Failed to get a response to call for list_folder. \nWe got an error [%s] with text "%s"' % (aResult.status_code, aResult.text))
-	 		next;
+	 		logging.error( '* Failed to get a response to call for list_folder. Path [%s]. \nWe got an error [%s] with text "%s"' % (aPath, aResult.status_code, aResult.text) ) 
+	 		return myPathSummary;
 
 		# Note the JSON response
 		pathFilesAndFolders = aResult.json()
+
+		#pprint.pprint( pathFilesAndFolders )
 
 		# Loop through each item in list
 		for item in pathFilesAndFolders['entries']: 
@@ -142,12 +159,14 @@ def getSumOfPath(aPath, aPathID, aMasterFolderList, team_member_id):
 				myPathSummary.file_size_in_bytes += item['size']
 				myPathSummary.file_folder_size_in_bytes += item['size']
 				myPathSummary.num_files += 1
+
+				gListOfPaths.append( [email_address, item['path_display'], item['size']] )
 			
 			# If it's a folder, recursively call this function
 			else:
 				myPathSummary.num_folders += 1
 				
-				summary = getSumOfPath( item['path_lower'], item['id'], aMasterFolderList, team_member_id )
+				summary = getSumOfPath( item['path_lower'], item['id'], aMasterFolderList, team_member_id, email_address )
 				myPathSummary.file_folder_size_in_bytes += summary.file_folder_size_in_bytes
 				aMasterFolderList.append( summary )
 
@@ -238,15 +257,17 @@ bHaveCSV = os.path.isfile( sourceMembersToReportOn )
 if (not bHaveCSV):
 	print('We could not find a file listing users to report on. ')
 	print('Would you like to analyze ALL users on the team. Note this could be a very slow process.') 
-	lsAnswer = raw_input("Type 'y' to process ALL or 'n' to cancel this script: ")
+	lsAnswer = input("Type 'y' to process ALL or 'n' to cancel this script: ")
 
 	if ( lsAnswer == 'y' or lsAnswer == 'Y'):
 		bAnalyzeAll = True
 	elif ( lsAnswer == 'n' or lsAnswer == 'N'): 
 		print( '\nExiting script\n')
+		logging.info( "User select N, exiting script" ) 
 		exit()
 	else:
 		print("\n\nUser did not enter a 'n' or a 'y' input. Ending script.")
+		logging.info( "User did not seclt a 'n' or 'y', exiting script" ) 
 		exit();
 
 if (not bAnalyzeAll):
@@ -270,9 +291,11 @@ if (not bAnalyzeAll):
 				bAnalyzeAll = True
 			elif ( lsAnswer == 'n' or lsAnswer == 'N'):
 				print( '\nExiting script\n')
+				logging.info( "User select N, exiting script" ) 
 				exit()
 			else:
 				print("\n\nUser did not enter a 'n' or a 'y' input. Ending script.")
+				logging.info( "User did not seclt a 'n' or 'y', exiting script" ) 
 				exit();
 
 
@@ -292,9 +315,9 @@ if (gTokenTMM == ''):
 
 
 # Note the standard output
-gstdout = sys.stdout
+#gstdout = sys.stdout
 # Redirect standard output to log file
-sys.stdout = open('logfile.txt', 'w')
+#sys.stdout = open('logfile.txt', 'w')
 
 
 """
@@ -315,6 +338,7 @@ dbxTFLookup = {}  # A quick reference list of key-pair values of team-member-ids
 
 
 print ("> Retrieving Team Folders via API")
+logging.info( "> Retrieving Team Folders via API" ) 
 timestart = datetime.datetime.fromtimestamp(time.time())			# Used to note start and calculate total time script took to run.
 
 while hasMore:
@@ -329,6 +353,8 @@ while hasMore:
 	if( aResult.status_code != 200 ):
 		print ('>>> Failed to get a response to call for /team/team_folder/list')
 		print (aResult.text)
+		logging.info('>>> Failed to get a response to call for /team/team_folder/list')
+		logging.info(aResult.text)
 		exit();
 
 	# Note the JSON response
@@ -339,6 +365,7 @@ while hasMore:
 		dbxTeamFolders.append( aTeamFolder )
 		dbxTFLookup[ aTeamFolder['team_folder_id'] ] = aTeamFolder['name'] 
 		print ( aTeamFolder['team_folder_id'] + " : " + aTeamFolder['name'] )
+		logging.info( aTeamFolder['team_folder_id'] + " : " + aTeamFolder['name'] )
 
 	hasMore = teamFolders['has_more']            # Note if there's another cursor call to make. 
 
@@ -394,6 +421,9 @@ while hasMore:
 	if( aResult.status_code != 200 ):
 		print ('>>> Failed to get a response to call for /team/members/list')
 		print (aResult.text)
+		logging.error( '>>> Failed to get a response to call for /team/members/list' )
+		logging.error( aResult.text )
+
 		exit();
 
 	# Note the JSON response
@@ -415,8 +445,9 @@ while hasMore:
 # How long did the APIs take?
 timestop = datetime.datetime.fromtimestamp(time.time())
 
-print (" We have " + str(len(dbxUsers)) + " Dropbox Team members in memory from " + str(loopCounter) + " API Calls. it took " + str((timestop-timestart).total_seconds()) + " seconds.\n\n") 
-
+msg = " We have " + str(len(dbxUsers)) + " Dropbox Team members in memory from " + str(loopCounter) + " API Calls. it took " + str((timestop-timestart).total_seconds()) + " seconds.\n\n"
+print ( msg ) 
+logging.info( msg )
 
 
 
@@ -444,6 +475,7 @@ with open( 'Report.csv', 'wt') as csvReportSummary:
 		if (not bAnalyzeAll):
 			# Check if this member in csv list
 			if ( str(aMember['profile']['email']).lower() not in gUsersToAnalyze ):
+				logging.info( 'Skipping member: ' + str(aMember['profile']['email']).lower() )
 				continue;
 
 
@@ -453,7 +485,7 @@ with open( 'Report.csv', 'wt') as csvReportSummary:
 		timeStart = datetime.datetime.fromtimestamp(time.time())
 
 		aMasterFolderList = []
-		aMasterFolderList.append( getSumOfPath('', '', aMasterFolderList, str(aMember['profile']['team_member_id'])) )
+		aMasterFolderList.append( getSumOfPath('', '', aMasterFolderList, str(aMember['profile']['team_member_id']), aMember['profile']['email']) )
 		
 		# Counters for second report
 		summaryUserBytesTotal = 0
@@ -461,7 +493,7 @@ with open( 'Report.csv', 'wt') as csvReportSummary:
 		summaryUserTotalFolders = 0
 
 		for item in aMasterFolderList:
-			writerSummary.writerow([aMember['profile']['email'],item.path.encode('utf-8'), item.id, item.file_folder_size_in_bytes, getBytesAsGB_MB_KB(item.file_folder_size_in_bytes), item.file_size_in_bytes, item.num_files, item.num_folders])
+			writerSummary.writerow([aMember['profile']['email'],item.path, item.id, item.file_folder_size_in_bytes, getBytesAsGB_MB_KB(item.file_folder_size_in_bytes), item.file_size_in_bytes, item.num_files, item.num_folders])
 			
 			# Spin out a second report a flat summary of user account
 			summaryUserTotalFiles  += item.num_files
@@ -479,6 +511,15 @@ with open( 'Report.csv', 'wt') as csvReportSummary:
 		userTimeInSeconds = (timeStop-timeStart).total_seconds()
 		print( 'User %s took %s' % (aMember['profile']['email'], getTimeInHoursMinutesSeconds( userTimeInSeconds )))
 
+
+
+
+with open( 'filepaths.csv' , 'wt' ) as csvPaths:
+	writerSummary = csv.writer(csvPaths, delimiter=',')
+	writerSummary.writerow(['Email Address', 'path' , 'Size in bytes' ])
+
+	for item in gListOfPaths:
+		writerSummary.writerow(item)
 
 
 with open( 'ReportSummary.csv', 'wt') as csvReportSummary:
@@ -507,3 +548,6 @@ totalTimeStop = datetime.datetime.fromtimestamp(time.time())
 totalTimeInSeconds = (totalTimeStop-totalTimeStart).total_seconds()
 timeAsStr = getTimeInHoursMinutesSeconds( totalTimeInSeconds )
 printmessageblock( " Script finished running, it took %s seconds." % ( timeAsStr ) )
+logging.info( 'COMPLETE:' + " Script finished running, it took %s seconds." % ( timeAsStr ) )
+
+
