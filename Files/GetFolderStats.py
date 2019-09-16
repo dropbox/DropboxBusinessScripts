@@ -68,7 +68,8 @@ totalTimeStart = datetime.datetime.fromtimestamp(time.time())
 
 gListOfPaths = []
 
-logging.basicConfig(filename='output.log',level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(handlers=[logging.FileHandler('output.log', 'w', 'utf-8')], level=logging.DEBUG, format='%(asctime)s %(message)s')
+
 
 #############################################
 # Function to return current Timestamp 
