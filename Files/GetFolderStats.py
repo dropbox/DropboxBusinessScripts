@@ -66,10 +66,8 @@ DO NOT EDIT BELOW THIS POINT
 
 totalTimeStart = datetime.datetime.fromtimestamp(time.time())
 
-gListOfPaths = []
 
 logging.basicConfig(handlers=[logging.FileHandler('output.log', 'w', 'utf-8')], level=logging.DEBUG, format='%(asctime)s %(message)s')
-
 
 #############################################
 # Function to return current Timestamp 
@@ -110,7 +108,7 @@ def getTimeInHoursMinutesSeconds( sec ):
 # Recursive Function to take a path and analyse
 # it and it's child folders
 #############################################
-def getSumOfPath(aPath, aPathID, aMasterFolderList, team_member_id, email_address):
+def getSumOfPath(writer_summary, aPath, aPathID, aMasterFolderList, team_member_id, email_address):
 
 	global gListOfPaths
 
@@ -147,6 +145,8 @@ def getSumOfPath(aPath, aPathID, aMasterFolderList, team_member_id, email_addres
 	 		logging.error( '* Failed to get a response to call for list_folder. Path [%s]. \nWe got an error [%s] with text "%s"' % (aPath, aResult.status_code, aResult.text) ) 
 	 		return myPathSummary;
 
+
+
 		# Note the JSON response
 		pathFilesAndFolders = aResult.json()
 
@@ -161,13 +161,16 @@ def getSumOfPath(aPath, aPathID, aMasterFolderList, team_member_id, email_addres
 				myPathSummary.file_folder_size_in_bytes += item['size']
 				myPathSummary.num_files += 1
 
-				gListOfPaths.append( [email_address, item['path_display'], item['size']] )
-			
+				# Write out line to file
+				with open( 'filepaths.csv' , 'a+' ) as csvPaths:
+					ws = csv.writer(csvPaths, delimiter=',')
+					ws.writerow( [email_address, item['path_display'], item['size']] )
+					
 			# If it's a folder, recursively call this function
 			else:
 				myPathSummary.num_folders += 1
 				
-				summary = getSumOfPath( item['path_lower'], item['id'], aMasterFolderList, team_member_id, email_address )
+				summary = getSumOfPath( writer_summary, item['path_lower'], item['id'], aMasterFolderList, team_member_id, email_address )
 				myPathSummary.file_folder_size_in_bytes += summary.file_folder_size_in_bytes
 				aMasterFolderList.append( summary )
 
@@ -180,6 +183,8 @@ def getSumOfPath(aPath, aPathID, aMasterFolderList, team_member_id, email_addres
 			aData = json.dumps({'cursor': pathFilesAndFolders['cursor']}) 
 			loopCounter += 1
 
+	writer_summary.writerow([email_address, myPathSummary.path, myPathSummary.id, myPathSummary.file_folder_size_in_bytes, getBytesAsGB_MB_KB(myPathSummary.file_folder_size_in_bytes), myPathSummary.file_size_in_bytes, myPathSummary.num_files, myPathSummary.num_folders])
+			
 	return myPathSummary
 
 
@@ -462,11 +467,18 @@ logging.info( msg )
 summaryReport = []
 
 
+with open( 'filepaths.csv' , 'a+' ) as csvPaths:
+	ws = csv.writer(csvPaths, delimiter=',')
+	ws.writerow(['Email Address', 'path' , 'Size in bytes' ])
+
+
+
+
 
 with open( 'Report.csv', 'wt') as csvReportSummary:
 
-	writerSummary = csv.writer(csvReportSummary, delimiter=',')
-	writerSummary.writerow(['Email Address', 'Folder Path', 'Path ID', 'Total bytes in folder and sub-folders', 'Total bytes - Human Readable', 'Size of bytes in folder', 'No. Files in folder' , 'No. Folders in folder' ])
+	writer_summary = csv.writer(csvReportSummary, delimiter=',')
+	writer_summary.writerow(['Email Address', 'Folder Path', 'Path ID', 'Total bytes in folder and sub-folders', 'Total bytes - Human Readable', 'Size of bytes in folder', 'No. Files in folder' , 'No. Folders in folder' ])
 
 	aCounter = 1
 
@@ -486,15 +498,16 @@ with open( 'Report.csv', 'wt') as csvReportSummary:
 		timeStart = datetime.datetime.fromtimestamp(time.time())
 
 		aMasterFolderList = []
-		aMasterFolderList.append( getSumOfPath('', '', aMasterFolderList, str(aMember['profile']['team_member_id']), aMember['profile']['email']) )
-		
+		logging.info( 'START Member call to getSumOfPath. Team Member ID:' + str(aMember['profile']['team_member_id']) )
+		aMasterFolderList.append( getSumOfPath(writer_summary, '', '', aMasterFolderList, str(aMember['profile']['team_member_id']), aMember['profile']['email']) )
+		logging.info( 'END Member call to getSumOfPath. Team Member ID:' + str(aMember['profile']['team_member_id']) )
+
 		# Counters for second report
 		summaryUserBytesTotal = 0
 		summaryUserTotalFiles = 0
 		summaryUserTotalFolders = 0
 
 		for item in aMasterFolderList:
-			writerSummary.writerow([aMember['profile']['email'],item.path, item.id, item.file_folder_size_in_bytes, getBytesAsGB_MB_KB(item.file_folder_size_in_bytes), item.file_size_in_bytes, item.num_files, item.num_folders])
 			
 			# Spin out a second report a flat summary of user account
 			summaryUserTotalFiles  += item.num_files
@@ -514,29 +527,20 @@ with open( 'Report.csv', 'wt') as csvReportSummary:
 
 
 
-
-with open( 'filepaths.csv' , 'wt' ) as csvPaths:
-	writerSummary = csv.writer(csvPaths, delimiter=',')
-	writerSummary.writerow(['Email Address', 'path' , 'Size in bytes' ])
-
-	for item in gListOfPaths:
-		writerSummary.writerow(item)
-
-
 with open( 'ReportSummary.csv', 'wt') as csvReportSummary:
-	writerSummary = csv.writer(csvReportSummary, delimiter=',')
-	writerSummary.writerow(['Email Address', 'Total bytes', 'Total bytes - Human Readable', 'No. Files' , 'No. Folders' ])
+	ws = csv.writer(csvReportSummary, delimiter=',')
+	ws.writerow(['Email Address', 'Total bytes', 'Total bytes - Human Readable', 'No. Files' , 'No. Folders' ])
 
 	for item in summaryReport:
-		writerSummary.writerow([item[0],item[1], getBytesAsGB_MB_KB(item[1]), item[2], item[3]])
+		ws.writerow([item[0],item[1], getBytesAsGB_MB_KB(item[1]), item[2], item[3]])
 			
 
 with open( 'TeamFolders.csv', 'wt') as csvReportSummary:
-	writerSummary = csv.writer(csvReportSummary, delimiter=',')
-	writerSummary.writerow(['Team Folder Name', 'ID', 'Status', 'Team Shared Dropbox', 'Admin Sync Setting' ])
+	ws = csv.writer(csvReportSummary, delimiter=',')
+	ws.writerow(['Team Folder Name', 'ID', 'Status', 'Team Shared Dropbox', 'Admin Sync Setting' ])
 
 	for item in dbxTeamFolders:
-		writerSummary.writerow([item['name'], item['team_folder_id'], item['status']['.tag'], item['is_team_shared_dropbox'], item['sync_setting']['.tag'] ])
+		ws.writerow([item['name'], item['team_folder_id'], item['status']['.tag'], item['is_team_shared_dropbox'], item['sync_setting']['.tag'] ])
 
 
 """
@@ -550,5 +554,4 @@ totalTimeInSeconds = (totalTimeStop-totalTimeStart).total_seconds()
 timeAsStr = getTimeInHoursMinutesSeconds( totalTimeInSeconds )
 printmessageblock( " Script finished running, it took %s seconds." % ( timeAsStr ) )
 logging.info( 'COMPLETE:' + " Script finished running, it took %s seconds." % ( timeAsStr ) )
-
 
