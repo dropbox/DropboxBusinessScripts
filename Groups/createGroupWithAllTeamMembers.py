@@ -32,7 +32,7 @@ Pre-requisites:
 """
 Set your OAuth Tokens here
 """
-gScopedToken =  ''     # Team Member Management    
+gScopedToken =  ''     # API Scoped Token    
 
 gGroupName = 'GRP_ALL_TEAM_MEMBERS'
 
