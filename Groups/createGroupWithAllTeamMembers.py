@@ -4,10 +4,11 @@
 import json
 import requests
 import os                             # Allows for the clearing of the Terminal Window
+import csv                            # Allows outputting to CSV file
 
 
 """
-A Script to create a group called 'Example Group', and iterate over all members of a team, adding all member to the group.
+A Script to create a group called 'GRP_ALL_TEAM_MEMBERS', and iterate over all members of a team, adding all member to the group.
 
 Note: 
   This example assumes small number of users in team. If you had a large number of members you might want to make multiple calls
@@ -17,8 +18,11 @@ Note:
 Requirements:
   Script writen testing on Python 3.6.5
 
-  Dropbox API Token needed needed inserted just below this comments section.
-  * Team Member Management
+  Dropbox API Token needed inserted just below this comments section.
+  The following scoped permissions needed:
+  * team_data.member 
+  * members.read
+  * groups.write
 
 Pre-requisites:
 * Scripts requires library 'Requests' - You can install using "pip install requests"
@@ -28,9 +32,9 @@ Pre-requisites:
 """
 Set your OAuth Tokens here
 """
-gTokenTMM =  ''     # Team Member Management    
+gScopedToken =  ''     # Team Member Management    
 
-gGroupName = 'Example Group'
+gGroupName = 'GRP_ALL_TEAM_MEMBERS'
 
 
 
@@ -58,11 +62,11 @@ os.system('cls' if os.name=='nt' else 'clear')
 # 2. If not, ask the user to enter it.
 # ############################################
 """
-if (gTokenTMM == ''):
-  gTokenTMM = raw_input('Enter your Dropbox Business API App token (Team Member Management permission): ')
+if (gScopedToken == ''):
+  gScopedToken = raw_input('Enter your Dropbox Business API App token: ')
 
 aHeaders = {'Content-Type': 'application/json', 
-    'Authorization': 'Bearer %s' % gTokenTMM}
+    'Authorization': 'Bearer %s' % gScopedToken}
 
 """
 #############################################
