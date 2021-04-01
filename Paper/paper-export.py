@@ -8,6 +8,7 @@
 # It only works in accounts that have Paper In the FileSystem (PiFS). Script checks the account for that condition.
 # Does not work recursively, on purpose. You need to select the folders where your Paper docs are. Saves files in the working local folder. 
 # Once you are comfortable with running this, then you can modify it to work recursively. 
+# Your API key needs to have Full Dropbox access and files.content.read scope.
 
 import dropbox
 import os
