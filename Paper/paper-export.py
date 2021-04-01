@@ -1,8 +1,13 @@
 # File: paper-export.py
 # Export Paper Docs Tool
 # Version 1.0
-# Author: Marcel Ribas
+# Author: Marcel Ribas - @macribas
 # Date: 3/31/2021
+
+# Python script to export Paper Docs from a Dropbox account. It can export in either HTML or Markdown.
+# It only works in accounts that have Paper In the FileSystem (PiFS). Script checks the account for that condition.
+# Does not work recursively, on purpose. You need to select the folders where your Paper docs are. Saves files in the working local folder. 
+# Once you are comfortable with running this, then you can modify it to work recursively. 
 
 import dropbox
 import os
