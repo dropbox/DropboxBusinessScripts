@@ -59,7 +59,6 @@ while folder.has_more:
 	print("Still working")
 	folder = dbx.files_list_folder_continue(cursor)
 	cursor = folder.cursor
-	#has_more = folder.has_more
 	paper_docs += [file.path_display for file in folder.entries if isinstance(file, dropbox.files.FileMetadata) if not file.is_downloadable if os.path.splitext(file.path_lower)[1] == ".paper"]
 
 size = len(paper_docs)
