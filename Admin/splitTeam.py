@@ -6,53 +6,70 @@ import csv                            # Allows outputting to CSV file
 import time, datetime
 import sys
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
 
 """
 ********************************************************************************************************************
-
 The intention of this script is to:
-
 Iterate through a list of users ( users.csv ), remove that member from the source team (based on the API token provided gFromTeamTOKEN) 
 returning their account to being a personal individual account. 
 Then immediately inviting the user to join new team (based on the API token provided gToTeamTOKEN).
 
-Note:
+NOTE:
   CSV file expects email, first name, last name
   One user per row
 
-Users in target Team are invited as standard team members. They will need to ACCEPT the invitation before joining the team.
+Users in target Team are invited as standard team members. These users will need to ACCEPT the invitation before joining the team.
 Once they accept, they will enter the invite flow, and must select option to transfer their content to company.
 If you need to promote anyone to an Administrative level, do so using the Admin web pages.
 
-Notes:
+NOTES:
   When you remove a team member from a team:
   1. Account will be disconnected from the team and converted to an individual account
   2. Member will keep unshared files and folders, and shared folders that they own
   3. Member won't have access to team-owned folders that they were invited to after joining the team 
-  4. Member will still have access to Paper docs that they own and are private
+  4. Member will still have access to Paper docs that they own and are private. They will lose access to paper documents that were
+     shared with them, and also paper documents they owned and shared with others!
 
 By default the script runs in MOCK or test mode. Edit the variable 'gMockRun' to make it run for real.
-
 By default adding users to target team will send them an invite email, edit variable 'gSendWelcomeEmail' to stop this.
-
 Script logs most console content to a file 'logfile.txt' in the location script is executed. 
 
 ** WARNING **
 If you enter incorrect Target Team Token, users accounts could be orphaned as they'll be removed from Source Team but not added to
 the Target Team. 
 
+
+Requirements:
+  Script tested on Python 3.6.5
+
+  One Dropbox API Token is needed from each team, source team and target team. Inserted just below this comments section.
+  Permissions needed on token:
+
+  Source Team:
+  - team_data.member    "View structure of your team's and members' folders"
+  - members.delete        "Remove and recover your team members' accounts"
+
+  Target Team:
+  - team_data.member    "View structure of your team's and members' folders"
+  - members.write        "View and manage your team membership"
+
+
+Pre-requisites:
+* Scripts requires library 'Requests' - You can install using "pip install requests"
+
+
+
 ********************************************************************************************************************
 """
-gFromTeamTOKEN = ''     # Team Member Management token for SOURCE team
-gToTeamTOKEN = ''       # Team Member Management token for TARGET team
+gFromTeamTOKEN = ''     # Scoped API token for SOURCE team to remove user from
+gToTeamTOKEN = ''       # Scoped API token for TARGET team to add user to
+
 
 
 gMockRun = True                # If True the script emulates the actual call to the API so no account moves done
-gSendWelcomeEmail = True       # If True the script will send a Welcome / invite to user added to target team.
-
-
+gSendWelcomeEmail = False      # If True the script will send a Welcome / invite to user added to target team.
+gRetainTeamShares = False      # If True, when users removed from source team they will retain access to Dropbox Folders ( not paper folders ) already 
+                               # explicitly shared with them (not via group membership)
 
 
 
@@ -87,9 +104,9 @@ def getTimeInHoursMinutesSeconds( sec ):
 # Function to print Message to console in a tidy box
 #############################################
 def printmessageblock( str ):
-  print "\n*********************************************************"
-  print "* %s" % (str)
-  print "*********************************************************\n"
+  print ("\n*********************************************************")
+  print ("* %s" % (str))
+  print ("*********************************************************\n")
   return;
 
 #############################################
@@ -121,7 +138,7 @@ if (not gMockRun):
 else:
 	print( "You are in MOCK RUN mode so no accounts will be removed or added.")
 
-lsAnswer = raw_input("\nType 'y' to proceed or 'n' to cancel this script: ")
+lsAnswer = input("\nType 'y' to proceed or 'n' to cancel this script: ")
 
 if ( lsAnswer == 'y' or lsAnswer == 'Y'):
 	print( "\nExecuting script" )
@@ -151,7 +168,7 @@ sys.stdout = open('logfile.txt', 'w')
 # and add to target team
 #############################################
 # Open a file to read from
-with open( 'users.csv', 'rb') as csvfileRead:
+with open( 'users.csv', 'r') as csvfileRead:
 	# Open file to read from
 	reader = csv.reader(csvfileRead)
 		
@@ -172,7 +189,7 @@ aURLSource = 'https://api.dropboxapi.com/2/team/members/remove'
 # Details for target team
 aHeadersTarget = {'Content-Type': 'application/json', 
 		'Authorization': 'Bearer %s' % gToTeamTOKEN}
-aURLTarget = 'https://api.dropboxapi.com/2/team/members/add'
+aURLTarget = 'https://api.dropboxapi.com/2/team/members/add_v2'
 
 
 for user in gUsers:
@@ -182,7 +199,7 @@ for user in gUsers:
 	aSurname = user[2]
 
 	# Set Users Email into parameters
-	aData = json.dumps({'user': {'.tag': 'email', 'email': aEmailAddress}, 'wipe_data': False, 'keep_account': True})     
+	aData = json.dumps({'user': {'.tag': 'email', 'email': aEmailAddress}, 'wipe_data': False, 'keep_account': True, 'retain_team_shares': gRetainTeamShares})     
 
 	print( "\n------------------------------------------------------------------------" )
 	print( "Attempting to remove %s from source team." % aEmailAddress)
