@@ -35,7 +35,7 @@ Pre-requisites:
 """
 Set your OAuth Token here
 """
-gTokenTMM = ''    	# Team Member Management   
+gTokenTMM = ''    	# Insert SCOPE API token here 
 
 # Flag to control actually permanent wipe of 'external_id'. Defaults to MOCK run, whereby no change occurs.
 gRunInTestMode = True
