@@ -18,8 +18,11 @@ The intention of this script is to:
 Requirements:
   Script writen and tested on Python 3.6.5
 
-  Dropbox API Token needed needed inserted just below this comments section.
-  * Team Member Management
+  Dropbox API Token needs to be inserted just below this comments section.
+  It needs to have the following scoped permissions:
+
+  - team_data.member
+  - members.write
 
 Pre-requisites:
 * Scripts requires library 'Requests' - You can install using "pip install requests"
