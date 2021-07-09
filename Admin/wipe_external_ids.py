@@ -7,13 +7,14 @@ import os                             # Allows for the clearing of the Terminal 
 import csv                            # Allows outputting to CSV file
 import time, datetime
 import sys
-
+import pprint
 
 """
 The intention of this script is to:
 
+- Load a CSV list (config.csv) of users to wipe External IDs for
 - Iterate over all members of a team
-- If team member has an 'external_id' attribute set on the member profile, we'll set it to ""
+- If team member email is in the CSV list, we'll attempt to set its External ID to ""
 
 Requirements:
   Script writen and tested on Python 3.6.5
@@ -24,32 +25,23 @@ Requirements:
   - team_data.member
   - members.write
 
+
 Pre-requisites:
 * Scripts requires library 'Requests' - You can install using "pip install requests"
 
 """
 
-
-
-
 """
-Set your OAuth Token here
+Set your OAuth Tokens here
 """
-gTokenTMM = ''    	# Insert SCOPE API token here 
+gTokenTMM = ''    	# Insert SCOPED API token here
 
-# Flag to control actually permanent wipe of 'external_id'. Defaults to MOCK run, whereby no change occurs.
-gRunInTestMode = True
+# Source File Here
+gListOfMembersToWorkOn = 'config.csv'
 
+# Flag to control actually permanently wipe of 'external_id'
+gRunInTestMode = False
 
-
-
-
-
-"""
-********************************************************************************************************************
-                                             DO NOT EDIT BELOW THIS POINT
-********************************************************************************************************************
-"""
 
 
 
@@ -86,9 +78,7 @@ def getTimeInHoursMinutesSeconds( sec ):
 def wipeExternalID(email, team_member_id):
 
 	aURL = "https://api.dropboxapi.com/2/team/members/set_profile"
-	aData = json.dumps({'user': { '.tag': 'team_member_id', 'team_member_id': str(team_member_id)}, 'new_external_id': ''})
-
-
+	aData = json.dumps({"user": { ".tag": "team_member_id", "team_member_id": team_member_id}, "new_external_id": ""})
 	lHeadersTMFA = {'Content-Type': 'application/json',
 		'Authorization': 'Bearer %s' % gTokenTMM} 
 
@@ -96,13 +86,13 @@ def wipeExternalID(email, team_member_id):
 
 	if (not gRunInTestMode):
 		aResult = requests.post(aURL, headers=lHeadersTMFA, data=aData)  # Wipe 'external_id'
-		print( "wiping external_id for '" + str(email) + "'")
+		print ( "Wiped External ID for %s | %s" % (email,team_member_id) )
 	else:
-		print ( "Testing call to wipe External ID for %s" % email )
+		print ( "Testing call to wipe External ID for %s | %s" % (email,team_member_id) )
 		return True
 
 	if( aResult.status_code != 200 ):
-		print ( "ERROR: Failed to wipe External ID for email '%s', error code '%s', '%s'" % (email, aResult.status_code, aResult.text))
+		print ( "ERROR: Failed to wipe External ID for email: %s, error code %s, '%s'" % (email, aResult.status_code, aResult.text))
 		return False
 
 	return True
@@ -120,8 +110,41 @@ os.system('cls' if os.name=='nt' else 'clear')
 print ( "Starting: %s" % getPrettyTime() )
 totalTimeStart = datetime.datetime.fromtimestamp(time.time())
 
-if( gRunInTestMode ):
-	print ( "******* MOCK RUN *******" )
+
+"""
+# ############################################
+# Step 1 
+# Get a list of users to wipe 'external_id' on.
+# If empty or not found script will stop running.
+# ############################################
+"""
+
+gUsersToChange = {}
+bAnalyzeAll = False
+
+# Check we have a config file
+bHaveCSV = os.path.isfile( gListOfMembersToWorkOn ) 
+
+if (not bHaveCSV):
+	printmessageblock('We could not find config file listing users to work on. Ending script! ')
+	print ( "Stopping: %s" % getPrettyTime() )
+	exit();
+
+# Open file of users to analyze
+with open( gListOfMembersToWorkOn, 'r') as csvfileRead:
+	# Open file to read from
+	reader = csv.reader(csvfileRead)
+
+	#Iterate through each row of the CSV.
+	for row in reader:
+		gUsersToChange[row[0].lower()] = row[0].lower()  # Lower case so we can compare to Dropbox ( always lowercase )
+
+	if ( len(gUsersToChange) <= 0 ):
+
+		# Check that we have users
+		printmessageblock("We could not find any users in config file '%s' to work on. Ending script." % aListOfMembersToReportOn)
+		print ( "Stopping: %s" % getPrettyTime() )
+		exit();
 
 
 """
@@ -132,11 +155,12 @@ if( gRunInTestMode ):
 """
 aHeaders = {'Content-Type': 'application/json', 'Authorization': 'Bearer %s' % gTokenTMM}
 aURL = 'https://api.dropboxapi.com/2/team/members/list'
-aData = json.dumps({'limit': 50, 'include_removed': True}) 
+aData = json.dumps({'limit': 100, 'include_removed': True}) 
 
 hasMore = True;
 loopCounter = 0;
 totalMembers = 0
+members_wiped = 0
 
 while hasMore:
 	""" Make the API call """ 
@@ -147,6 +171,7 @@ while hasMore:
 	# If we don't get a 200 HTML response code, we didn't get a result. 
 	if( aResult.status_code != 200 ):
 		printmessageblock ('* Failed to get a response to call for /team/members/list')
+		print (aResult.text)
 		exit();
 
 	# Note the JSON response
@@ -156,12 +181,13 @@ while hasMore:
 	# Iterate over the Members in the JSON
 	for aMember in members['members']:
 		
-		# Check if there's an external ID
-		if( 'external_id' in aMember['profile'] ):
-			member_email = str(aMember['profile']['email'])
-			team_member_id = str(aMember['profile']['team_member_id'])
+		memberEmail = aMember['profile']['email'].strip()
+		team_member_id = aMember['profile']['team_member_id'].strip()
 
-			wipeExternalID(member_email, team_member_id)
+		# If this member is in our CSV list of members to change
+		if ( memberEmail in gUsersToChange ):
+			wipeExternalID(memberEmail, team_member_id)
+			members_wiped = members_wiped + 1
 
 
 	hasMore = members['has_more']                                                     # Note if there's another cursor call to make. 
@@ -172,16 +198,21 @@ while hasMore:
 		aData = json.dumps({'cursor': members['cursor']}) 
 
 
+
 """
 #############################################
 # Step 7
 # 1. Output how long the script took to run.
 #############################################
 """
+
+print ( "\n\nIterated over members: " + str(totalMembers))
+print ( "Wiped external ID for: " + str(members_wiped) + "\n\n")
+
 totalTimeStop = datetime.datetime.fromtimestamp(time.time())
 totalTimeInSeconds = (totalTimeStop-totalTimeStart).total_seconds()
 timeAsStr = getTimeInHoursMinutesSeconds( totalTimeInSeconds )
-printmessageblock( " Script finished running, it took                                           %s." % ( timeAsStr ) )
+printmessageblock( " Script finished running, it took %s seconds." % ( timeAsStr ) )
 
 print ( "\nStopping: %s" % getPrettyTime() )
 
